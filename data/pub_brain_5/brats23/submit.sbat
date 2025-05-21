@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#SBATCH --job-name=bratc23
+#SBATCH --mail-user=chuizhao@umich.edu
+#SBATCH --mail-type=FAIL
+#SBATCH --cpus-per-task=24
+#SBATCH --nodes=1
+#SBATCH --mem=120g
+#SBATCH --gres=gpu:0
+#SBATCH --time=1-00:00:00
+#SBATCH --account=tocho99
+#SBATCH --partition=standard
+#SBATCH --output=./logs/%x-%j.log
+
+my_job_header
+
+python data_process_cls.py --num-cpus 24 --dataset 'BraTS-GLI'
+python data_process_cls.py --num-cpus 24 --dataset 'BraTS-MEN'
+python data_process_cls.py --num-cpus 24 --dataset 'BraTS-MET'
+python data_process_cls.py --num-cpus 24 --dataset 'BraTS-PED'
