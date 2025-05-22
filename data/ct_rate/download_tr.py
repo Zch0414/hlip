@@ -8,7 +8,7 @@ from huggingface_hub import hf_hub_download
 
 
 # huggingface
-hf_token = 'hf_token'
+hf_token = '' # your token
 repo_id = 'ibrahimhamamci/CT-RATE'
 directory_name = 'dataset/train/'
 # save directory

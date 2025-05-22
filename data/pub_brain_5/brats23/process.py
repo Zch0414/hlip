@@ -11,7 +11,7 @@ import torch
 def get_args_parser():
     parser = argparse.ArgumentParser('BraTS23', add_help=False)
     parser.add_argument('--num-cpus', default=1, type=int)
-    parser.add_argument('--root-path', default='/data/brats2023', type=str)
+    parser.add_argument('--root-path', default='/data/brats23', type=str)
     parser.add_argument('--save-path', default='/data/pub_brain_5/brats23/', type=str)
     parser.add_argument('--dataset', default='BraTS-GLI', type=str)
     return parser

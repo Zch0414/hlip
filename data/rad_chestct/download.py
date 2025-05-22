@@ -8,7 +8,7 @@ if __name__ == "__main__":
     save_dir = "/download/rad_chestct/"
     os.makedirs(save_dir, exist_ok=True)
     
-    access_token = "access_token"
+    access_token = "" # your token
     record_id = "6406114"
 
     r = requests.get(f"https://zenodo.org/api/records/{record_id}", params={'access_token': access_token})
