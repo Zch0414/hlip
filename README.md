@@ -13,11 +13,32 @@ We propose **H**ierarchical attention for **L**anguage-**I**mage **P**re-trainin
 
 ## Getting Started
 
-### Install open-clip
-[open-clip]([https://github.com/facebookresearch/deit/tree/main](https://github.com/mlfoundations/open_clip/tree/main))
+### Install [open-clip](https://github.com/mlfoundations/open_clip/tree/main)
+```bash
+python3 -m venv env
+source env/bin/activate
+pip install -U pip
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+git clone git@github.com:mlfoundations/open_clip.git
+cd open_clip
+make install
+make install-training
 ```
-- python3 -m venv env
-- source .env/bin/activate
-- pip install -U pip
-- git clone 
+
+### Test Demo
+Brain MRI
+```bash
+python inference_pub_brain_5.py \
+  --model vit_base_multiscan_h2_token1176 \
+  --resume /path/to/vit_base_multiscan_h2_token1176.pt \
+  --patch-size 8 16 16 \
+  --num-slices 72 \
+  --data /docs/BraTS-GLI-00459-000/ \
+```
+Chest CT
+```bash
+python inference_rad_chestct.py \
+  --model vit_base_singlescan_h2_token1176 \
+  --resume /path/to/vit_base_singlescan_h2_token1176.pt \
+  --data /docs/tst32751/tst32751.pt \
 ```
