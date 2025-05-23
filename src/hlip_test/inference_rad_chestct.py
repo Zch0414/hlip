@@ -16,7 +16,7 @@ from torchvision.transforms import Normalize
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_ct_rate import ORGANS, PROMPTS, TEMPLATES
+from hlip.zeroshot_metadata_rad_chestct import ORGANS, PROMPTS, TEMPLATES
 
 
 def get_args_parser():
@@ -94,7 +94,7 @@ def loader(recon_path):
     
     normalizer = Normalize(torch.as_tensor(IMAGENET_DEFAULT_MEAN).mean(), torch.as_tensor(IMAGENET_DEFAULT_STD).mean())
     img = normalizer(img)
-    return img[None, ...]
+    return img[None, None, ...] # [1, n=1, 1, d, h, w]
 
 def inference(model, tokenizer, image, args):
     model.eval()

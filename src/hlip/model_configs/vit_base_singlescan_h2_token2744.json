@@ -9,9 +9,9 @@
     },
     "text_cfg": {
         "hf_model_name": "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext",
-        "hf_tokenizer_name": "microsoft/BiomedNLP-BiomedBERT-base-uncased-abstract-fulltext",
+        "hf_tokenizer_name": "microsoft/BiomedVLP-CXR-BERT-specialized",
         "hf_pooler_type": "cls_last_hidden_state_pooler",
         "hf_proj_type": "linear",
-        "context_length": 256
+        "context_length": 512
     }
 }

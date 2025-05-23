@@ -26,9 +26,9 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Inference', add_help=False)
     
     # model
-    parser.add_argument('--model', default='vit_base_multiscan_h2_token1176', type=str)
-    parser.add_argument('--patch-size', nargs='+', default=[8, 16, 16], type=int)
-    parser.add_argument('--resume', default='/pretrained/vit_base_multiscan_h2_token1176.pt', type=str)
+    parser.add_argument('--model', default='vit_base_multiscan_h2_token588', type=str)
+    parser.add_argument('--patch-size', nargs='+', default=[16, 16, 16], type=int)
+    parser.add_argument('--resume', default='/pretrained/vit_base_multiscan_h2_token588.pt', type=str)
     parser.add_argument('--device', default='cuda:0', type=str)
     
     # data
@@ -38,6 +38,7 @@ def get_args_parser():
     # interpret
     parser.add_argument('--interpret', default=False, action='store_true')
     parser.add_argument('--target', default='Glioma', type=str)
+    parser.add_argument('--save-dir', default='/interpret/', type=str)
     return parser
 
 
@@ -71,7 +72,7 @@ def loader(study_path, num_slices):
 
 
 def show_interpret(image, interpret, save_name, args):
-    save_dir = f"/interpret/{args.target}/"
+    save_dir = os.path.join(args.save_dir, args.target)
     os.makedirs(save_dir, exist_ok=True)
 
     # de-normalization

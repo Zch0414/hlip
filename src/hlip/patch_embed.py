@@ -19,7 +19,8 @@ class PatchEmbed3D(nn.Module):
         B, N, C, D, H, W = x.shape
         x = x.view(-1, C, D, H, W)
         x = self.proj(x)
-
+        _, _, D, H, W = x.shape
+        
         # BN * C' * D' * H' * W' -> B * N * D' * H' * W' * C'
         x = x.permute(0, 2, 3, 4, 1).contiguous().view(B, N, D, H, W, -1) 
         x = self.norm(x)

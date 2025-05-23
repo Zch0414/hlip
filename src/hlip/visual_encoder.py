@@ -215,7 +215,7 @@ class HLIPVisualEncoder(VisionTransformer):
                 x = checkpoint(blk, x)
             else:
                 x = blk(x)
-        
+
         if len(self.blocks) - 1 in self.scan_attn_indexes: 
             x = self._scan2study(x, num_scans)
         elif len(self.blocks) - 1 in self.slice_attn_indexes:

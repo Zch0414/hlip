@@ -41,12 +41,12 @@ def resample_3d_posemb(posemb, new_size, old_size):
     return posemb
 
 
-def study_pos_embed(max_num_sequential, grid_size, embed_dim, pretrained_posemb=None): 
+def study_pos_embed(max_num_scans, grid_size, embed_dim, pretrained_posemb=None): 
     """
     pretrained_posemb should be a 2D position embedding without prefix_posemb
     Return:
         spatial_posemb: A tensor of shape [1, d, h, w, embed_dim]
-        sequential_posemb: A tensor of shape [1, max_num_sequential, embed_dim]
+        sequential_posemb: A tensor of shape [1, max_num_scans, embed_dim]
     """
     if pretrained_posemb is not None: 
         # build mri position embedding from pretrained_posemb:
@@ -64,10 +64,10 @@ def study_pos_embed(max_num_sequential, grid_size, embed_dim, pretrained_posemb=
         ) # [n, embed_dim]
         slice_posemb = torch.from_numpy(slice_posemb).float()
         spatial_posemb = slice_posemb[None, :, None, None, :] + pretrained_posemb[:, None, :, :, :] 
-        if max_num_sequential > 1:
+        if max_num_scans > 1:
             sequential_posemb = get_1d_sincos_pos_embed(
                 embed_dim=embed_dim,
-                sequence_len=max_num_sequential,
+                sequence_len=max_num_scans,
                 cls_token=False
             ) # [n, embed_dim]
             sequential_posemb = torch.from_numpy(sequential_posemb).float()[None, ...]
@@ -82,10 +82,10 @@ def study_pos_embed(max_num_sequential, grid_size, embed_dim, pretrained_posemb=
             flatten=False,
         ) # [d, h, w, embed_dim]
         spatial_posemb = torch.from_numpy(spatial_posemb).float()[None, ...]
-        if max_num_sequential:
+        if max_num_scans > 1:
             sequential_posemb = get_1d_sincos_pos_embed(
                 embed_dim=embed_dim,
-                sequence_len=max_num_sequential,
+                sequence_len=max_num_scans,
                 cls_token=False,
             ) # [n, embed_dim]
             sequential_posemb = torch.from_numpy(sequential_posemb).float()[None, ...]
