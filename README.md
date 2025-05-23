@@ -17,7 +17,8 @@ We propose **H**ierarchical attention for **L**anguage-**I**mage **P**re-trainin
 
 ## Getting Started
 
-### Install [open-clip](https://github.com/mlfoundations/open_clip/tree/main)
+### Install 
+[open-clip](https://github.com/mlfoundations/open_clip/tree/main)
 ```bash
 python3 -m venv env
 source env/bin/activate
