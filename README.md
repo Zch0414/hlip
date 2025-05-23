@@ -9,7 +9,11 @@
 We propose **H**ierarchical attention for **L**anguage-**I**mage **P**re-training (**HLIP**), inspired by the natural hierarchy of radiology data: slice, scan, and study. With this lightweight attention mechanism, HLIP can be trained directly on uncurated clinical datasets, enabling scalable language-image pre-training in 3D medical imaging. For real-world clinical use, HLIP can be applied to studies containing either a single scan (e.g., chest CT) or multiple scans (e.g., brain MRI).
 
 ## Updates
+- **(Todo)** Release training code.
+- **(Todo)** Release evaluation code.
 - **(2025-05)** Release test demo and HLIP models trained on chest CT and brain MRI.
+- **(2025-05)** Release data process pipeline for Pub-Brain-5.
+- **(2025-05)** Release data process pipeline for CT-RATE and Rad-ChestCT.
 
 ## Getting Started
 
