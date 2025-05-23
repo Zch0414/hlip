@@ -11,9 +11,9 @@ We propose **H**ierarchical attention for **L**anguage-**I**mage **P**re-trainin
 ## Updates
 - **(Todo)** Release training code.
 - **(Todo)** Release evaluation code.
-- **(2025-05)** Release test demo and HLIP models trained on chest CT and brain MRI.
 - **(2025-05)** Release data process pipeline for Pub-Brain-5.
 - **(2025-05)** Release data process pipeline for CT-RATE and Rad-ChestCT.
+- **(2025-05)** Release HLIP models trained on chest CT and brain MRI.
 
 ## Getting Started
 
