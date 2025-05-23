@@ -30,6 +30,13 @@ make install-training
 ```
 
 ### Test Demo
+Chest CT
+```bash
+python inference_rad_chestct.py \
+  --model vit_base_singlescan_h2_token1176 \
+  --resume /path/to/vit_base_singlescan_h2_token1176.pt \
+  --data /docs/tst32751/tst32751.pt \
+```
 Brain MRI
 ```bash
 python inference_pub_brain_5.py \
@@ -38,11 +45,4 @@ python inference_pub_brain_5.py \
   --patch-size 8 16 16 \
   --num-slices 72 \
   --data /docs/BraTS-GLI-00459-000/ \
-```
-Chest CT
-```bash
-python inference_rad_chestct.py \
-  --model vit_base_singlescan_h2_token1176 \
-  --resume /path/to/vit_base_singlescan_h2_token1176.pt \
-  --data /docs/tst32751/tst32751.pt \
 ```
