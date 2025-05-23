@@ -29,7 +29,7 @@ make install
 make install-training
 ```
 
-### Test Demo
+### Demo
 Chest CT
 ```bash
 python inference_rad_chestct.py \
