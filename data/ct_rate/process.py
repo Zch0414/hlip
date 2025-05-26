@@ -14,7 +14,7 @@ def get_args_parser():
     # Device
     parser.add_argument('--num-cpus', default=1, type=int)
     # Data
-    parser.add_argument('--data', default='valid', type=str)
+    parser.add_argument('--data', default='train', type=str)
     parser.add_argument('--root-dir', default='/download/ct_rate/dataset/')
     parser.add_argument('--save-dir', default='/data/ct_rate/', type=str)
     parser.add_argument('--save-astype', default='float32', type=str)
