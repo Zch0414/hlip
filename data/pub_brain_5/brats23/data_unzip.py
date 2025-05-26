@@ -23,7 +23,7 @@ def unzip_file(zip_path, extract_to):
 
 if __name__ == "__main__":
     logging.basicConfig(filename='unzip.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-    root_path = '/data/brats2023/'
+    root_path = '/data/brats23/'
     files = sorted([p for p in Path(root_path).rglob("*.zip")])
     for file in files:
         logging.info(f"unzip {str(file).split('/')[-2]}: {str(file).split('/')[-1]} ...")
