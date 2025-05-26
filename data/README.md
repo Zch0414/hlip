@@ -38,7 +38,7 @@ python download.py
 ```
 Once complete, process the dataset with:
 ```python
-python process.py --num-cpus 8 --data valid --root-dir '/download/rad_chestct/' --save-dir '/data/rad_chestct/'\
+python process.py --num-cpus 8 --data valid --root-dir '/download/rad_chestct/' --save-dir '/data/rad_chestct/'
 ```
 All necessary files have already been provided. There is no need to run the other code; it is included solely as a reference to illustrate how the files were generated.
 
