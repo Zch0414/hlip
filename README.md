@@ -46,3 +46,7 @@ python inference_pub_brain_5.py \
   --num-slices 72 \
   --data /docs/BraTS-GLI-00459-000/ \
 ```
+Visualizing the activation with:
+```bash
+--interpret
+```
