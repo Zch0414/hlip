@@ -1,17 +1,17 @@
 ## CT-RATE
 
 Downloading the CT-RATE dataset with:
-```python
+```bash
 python download_valid.py
 python download_train.py
 ```
 Downloading the training split may take ~2 days. Once complete, process the dataset with:
-```python
+```bash
 python process.py --num-cpus 8 --data valid --root-dir '/download/ct_rate/dataset/' --save-dir '/data/ct_rate/'
 python process.py --num-cpus 8 --data train --root-dir '/download/ct_rate/dataset/' --save-dir '/data/ct_rate/'
 ```
 Data type and spacing should not be critical concerns based on our analysis. One may consider the following commands to reduce the dataset size:
-```python
+```bash
 --save-astype; --spacing
 ```
 All necessary files have already been provided, some of which are provided by [fVLM](https://github.com/alibaba-damo-academy/fvlm). 
@@ -33,11 +33,11 @@ There is no need to run the other code; it is included solely as a reference to 
 ## Rad-ChestCT
 
 Downloading the Rad-ChestCT dataset with:
-```python
+```bash
 python download.py
 ```
 Once complete, process the dataset with:
-```python
+```bash
 python process.py --num-cpus 8 --data valid --root-dir '/download/rad_chestct/' --save-dir '/data/rad_chestct/'
 ```
 All necessary files have already been provided. There is no need to run the other code; it is included solely as a reference to illustrate how the files were generated.
