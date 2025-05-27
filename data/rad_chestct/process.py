@@ -1,5 +1,4 @@
 import os
-import json
 import argparse
 import numpy as np
 import multiprocessing as mp
@@ -48,8 +47,10 @@ def single_worker(data_pathes, args):
         elif args.save_astype == 'float16':
             img = torch.from_numpy(img).to(torch.float16)
 
-        os.makedirs(args.save_dir, exist_ok=True)
-        torch.save(img, str(data_path).replace('download', 'data').replace('npz', 'pt'))
+        name = str(data_path).split('/')[-1].split('.')[0]
+        img_save_dir = os.path.join(args.save_dir, name)
+        os.makedirs(img_save_dir, exist_ok=True)
+        torch.save(img, os.path.join(img_save_dir, name+'.pt'))
 
 
 def main(args):
