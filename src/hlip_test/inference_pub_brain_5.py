@@ -28,7 +28,7 @@ def get_args_parser():
     # model
     parser.add_argument('--model', default='vit_base_multiscan_h2_token588', type=str)
     parser.add_argument('--patch-size', nargs='+', default=[16, 16, 16], type=int)
-    parser.add_argument('--resume', default='/pretrained/vit_base_multiscan_h2_token588.pt', type=str)
+    parser.add_argument('--resume', default='/pretrained/vit_base_brainmri_h2_token588.pt', type=str)
     parser.add_argument('--device', default='cuda:0', type=str)
     
     # data
