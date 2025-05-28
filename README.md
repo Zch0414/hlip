@@ -29,7 +29,7 @@ make install
 make install-training
 ```
 
-### Model
+### Pre-trained Weights
 | Modality | Attention | Patch Size | Model |
 | -------- | -------- | -------- | -------- |
 | Chest CT | <code>slice</code> <code>scan</code> | <code>8, 24, 24</code> | [ViT-Base](https://drive.google.com/file/d/1muu7L9H3KaL3nq3fNtN8kKF1eDK3R5Z4/view?usp=drive_link) |
