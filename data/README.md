@@ -11,9 +11,8 @@ python process.py --num-cpus 8 --data 'valid' --root-dir '/download/ct_rate/data
 python process.py --num-cpus 8 --data 'train' --root-dir '/download/ct_rate/dataset/' --save-dir '/data/ct_rate/'
 ```
 Based on our analysis, data type and spacing should not be critical concerns. One may consider the following commands to reduce the dataset size:
-```bash
---save-astype; --spacing
-```
+<code>--save-astype</code> and <code>--spacing</code>.
+
 All necessary files have already been provided, some of which are provided by [fVLM](https://github.com/alibaba-damo-academy/fvlm). 
 There is no need to run the other code; it is included solely as a reference to illustrate how the files were generated.
 
@@ -57,7 +56,7 @@ All necessary files have already been provided. There is no need to run the othe
 
 ## Pub-Brain-5
 
-We provide the *uid* of [Open-BHB](https://baobablab.github.io/bhb/dataset), [Stroke](https://www.icpsr.umich.edu/web/ICPSR/studies/38464), [BraTS23](https://www.synapse.org/Synapse:syn51156910/wiki/627000), [NYUMets](https://nyumets.org/docs/brainapi/), and [UCSFMets](https://imagingdatasets.ucsf.edu/dataset/1). All of these datasets are publicly available. Currently, Pub-Brain-5 can only be built using the uids we provide. We plan to offer a more convenient way to link the dataset in the future. Reference code is also provided for convenience.
+We provide the <code>uid</code> of [Open-BHB](https://baobablab.github.io/bhb/dataset), [Stroke](https://www.icpsr.umich.edu/web/ICPSR/studies/38464), [BraTS23](https://www.synapse.org/Synapse:syn51156910/wiki/627000), [NYUMets](https://nyumets.org/docs/brainapi/), and [UCSFMets](https://imagingdatasets.ucsf.edu/dataset/1). All of these datasets are publicly available. Currently, Pub-Brain-5 can only be built using the <code>uid</code> we provide. We plan to offer a more convenient way to link the dataset in the future. Reference code is also provided for convenience.
 
 **reference:**
 ```bib
