@@ -1,7 +1,9 @@
 # HLIP
 > Official PyTorch implementation of the following paper:\
 > Towards Scalable Language-Image Pre-training for 3D Medical Imaging\
-> University of Michigan
+> University of Michigan\
+> [![arXiv](https://img.shields.io/badge/arXiv%20paper-2505.21862-b31b1b.svg)](https://arxiv.org/abs/2505.21862)&nbsp;
+
 
 ## Overview
 <p align="center"><img src="https://github.com/Zch0414/hlip/blob/master/docs/github.png" width=96% height=96% class="center"></p>
