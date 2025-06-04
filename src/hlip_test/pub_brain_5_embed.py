@@ -27,7 +27,7 @@ def get_args_parser():
     parser.add_argument('--model', default='vit_base_multiscan_h2_token1176', type=str)
     parser.add_argument('--resume', default='/pretrained/vit_base_brainmri_h2_token1176.pt', type=str)
     
-    parser.add_argument('--input-filename', default='/data/pub_brain_5/pub_brain_5.csv')
+    parser.add_argument('--input-filename', default='../../data/pub_brain_5/pub_brain_5.csv')
     parser.add_argument('--num-slices', default=144, type=int)
     
     parser.add_argument('--device', default='cuda:0', type=str)
