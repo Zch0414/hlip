@@ -30,18 +30,18 @@ from hlip.zeroshot_metadata_ct_rate import CLASSNAMES, ORGANS, TEMPLATES, PROMPT
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)
-    parser.add_argument('--model', default='vit_base_singlescan_token2744', type=str)
+    parser.add_argument('--model', default='vit_base_singlescan_h2_token2744', type=str)
     parser.add_argument('--use-cxr-bert', default=True, action='store_false')
     parser.add_argument('--lora-text', default=False, action='store_true')
     parser.add_argument('--resume', default='/pretrained/vit_base_chestct_h2_token2744.pt', type=str)
 
     parser.add_argument('--ct-rate-root', default='/data/ct_rate/valid/')
-    parser.add_argument('--input-filename', default='../../data/ct_rate/files/valid_labels.csv', type=str)
+    parser.add_argument('--input-filename', default='../../data/ct_rate/metafiles/valid_labels.csv', type=str)
     parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "float32", "crop"])
     parser.add_argument('--zeroshot-template', default='volume', type=str)
 
     parser.add_argument('--device', default='cuda:0', type=str)
-    parser.add_argument('--workers', default=16, type=int)
+    parser.add_argument('--workers', default=4, type=int)
 
     return parser
 
@@ -142,7 +142,7 @@ def get_data(args, preprocess_fn=None):
             normalizer = Normalize(torch.as_tensor(IMAGENET_DEFAULT_MEAN).mean(), torch.as_tensor(IMAGENET_DEFAULT_STD).mean())
             img = normalizer(img)
 
-            return recon, img, torch.as_tensor(target)
+            return recon, img[None, ...], torch.as_tensor(target)
     
 
     dataset = ZeroShotDataset(
@@ -286,7 +286,7 @@ def zero_shot(model, tokenizer, dataloader, args):
             'mean precision': mean_precision,
         }
 
-        mean_auc, mean_balanced_acc, mean_weighted_f1, mean_recall, mean_precision = 0., 0., 0., 0., 0.
+        mean_auc, mean_acc, mean_weighted_f1, mean_recall, mean_precision = 0., 0., 0., 0., 0.
         for key in CLASSNAMES:
             threshold = find_threshold(np.array(labels[key]), np.array(logits[key]))
 
