@@ -31,27 +31,27 @@ make install
 make install-training
 ```
 
-### Pre-trained Weight
-| Modality | Attention | Patch Size | Model |
+### Model Card
+| Data | Attention | Patch Size | Model |
 | -------- | -------- | -------- | -------- |
-| Chest CT | <code>slice</code> <code>scan</code> | <code>8, 24, 24</code> | [ViT-Base](https://drive.google.com/file/d/1muu7L9H3KaL3nq3fNtN8kKF1eDK3R5Z4/view?usp=drive_link) |
-| Brain MRI | <code>scan</code> <code>study</code> | <code>16, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1uUdcE0TYx3K2YU7FQMfwb2FsFQjQcGil/view?usp=drive_link) |
-| Brain MRI | <code>scan</code> <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/12BwJvd6IEZynXM8jkled0ND7t11iuySj/view?usp=drive_link) |
-| Brain MRI | <code>slice</code> <code>scan</code> <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1FgOS3W6LhnhH4gJlbASPopUEXChcjeqy/view?usp=drive_link) |
+| CT-RATE-20K | <code>slice</code> <code>scan</code> | <code>8, 24, 24</code> | [ViT-Base](https://drive.google.com/file/d/1muu7L9H3KaL3nq3fNtN8kKF1eDK3R5Z4/view?usp=drive_link) |
+| BrainMRI220K | <code>scan</code> <code>study</code> | <code>16, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1uUdcE0TYx3K2YU7FQMfwb2FsFQjQcGil/view?usp=drive_link) |
+| BrainMRI220K | <code>scan</code> <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/12BwJvd6IEZynXM8jkled0ND7t11iuySj/view?usp=drive_link) |
+| BrainMRI220K | <code>slice</code> <code>scan</code> <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1FgOS3W6LhnhH4gJlbASPopUEXChcjeqy/view?usp=drive_link) |
 
 ### Demo
 Chest CT
 ```bash
 python inference_rad_chestct.py \
   --model vit_base_singlescan_h2_token1176 \
-  --resume /path/to/vit_base_singlescan_h2_token1176.pt \
+  --resume /path/to/vit_base_chestct_h2_token1176.pt \
   --data /docs/tst32751/tst32751.pt \
 ```
 Brain MRI
 ```bash
 python inference_pub_brain_5.py \
   --model vit_base_multiscan_h2_token1176 \
-  --resume /path/to/vit_base_multiscan_h2_token1176.pt \
+  --resume /path/to/vit_base_brainmri_h2_token1176.pt \
   --patch-size 8 16 16 \
   --num-slices 72 \
   --data /docs/BraTS-GLI-00459-000/ \
