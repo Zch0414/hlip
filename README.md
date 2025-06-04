@@ -12,7 +12,7 @@ We propose **H**ierarchical attention for **L**anguage-**I**mage **P**re-trainin
 
 ## Updates
 - **(Todo)** Release training code.
-- **(Todo)** Release evaluation code.
+- **(2025-06)** Release evaluation code.
 - **(2025-06)** Release data process pipeline.
 - **(2025-05)** Release HLIP models trained on chest CT and brain MRI, feel free to try our demos.
 
@@ -40,14 +40,15 @@ make install-training
 | BrainMRI220K | <code>slice</code> <code>scan</code> <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1FgOS3W6LhnhH4gJlbASPopUEXChcjeqy/view?usp=drive_link) |
 
 ### Demo
-Chest CT
+Chest CT: an example from the external Rad-ChestCT dataset.
 ```bash
 python inference_rad_chestct.py \
   --model vit_base_singlescan_h2_token1176 \
   --resume /path/to/vit_base_chestct_h2_token1176.pt \
   --data /docs/tst32751/tst32751.pt \
 ```
-Brain MRI
+
+Brain MRI: an example from the external BraTS23 dataset.
 ```bash
 python inference_pub_brain_5.py \
   --model vit_base_multiscan_h2_token1176 \
@@ -57,4 +58,40 @@ python inference_pub_brain_5.py \
   --data /docs/BraTS-GLI-00459-000/ \
 ```
 Visualizing the activation with <code>--interpret</code>.
+
+### Evaluation
+CT-RATE
+```bash
+python zeroshot_ct_rate.py \
+  --model vit_base_singlescan_h2_token2744 \
+  --resume /path/to/vit_base_chestct_h2_token2744.pt \
+  --ct-rate-root /data/ct_rate/valid/ \
+  --zeroshot-template volume \
+```
+
+Rad-ChestCT
+```bash
+python zeroshot_rad_chestct.py \
+  --model vit_base_singlescan_h2_token2744 \
+  --resume /path/to/vit_base_chestct_h2_token2744.pt \
+  --rad-chestct-root /data/rad_chestct/ \
+  --zeroshot-template volume \
+```
+
+Brain MRI
+```bash
+python pub_brain_5_embed.py \
+  --model vit_base_multiscan_h2_token1176 \
+  --resume /path/to/vit_base_brainmri_h2_token1176.pt \
+  --num-slices 144 \
+```
+```bash
+python zeroshot_pub_brain_5.py \
+  --model vit_base_multiscan_h2_token1176 \
+  --resume /path/to/vit_base_brainmri_h2_token1176.pt \
+  --num-slices 144 \
+  --zeroshot_prompt prompt \
+  --zeroshot_template template \
+```
+As there are ~18K studies in the Pub-Brain-5 dataset, evaluation may take ~30 minutes. We first extract the embedding for each study, followed by zero-shot classification. This procedure facilitates the evaluation of prompt engineering. Although we use a fixed input size of <code>48, 224, 224</code>, <code>--num-slices</code> is set to 144 during evaluation, as we found that HLIP can directly transfer and benefit from higher-resolution inputs at test time.
 
