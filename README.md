@@ -34,10 +34,10 @@ make install-training
 ### Model Card
 | Data | Attention | Patch Size | Model |
 | -------- | -------- | -------- | -------- |
-| CT-RATE-20K | <code>slice</code> <code>scan</code> | <code>8, 24, 24</code> | [ViT-Base](https://drive.google.com/file/d/1muu7L9H3KaL3nq3fNtN8kKF1eDK3R5Z4/view?usp=drive_link) |
-| BrainMRI220K | <code>scan</code> <code>study</code> | <code>16, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1uUdcE0TYx3K2YU7FQMfwb2FsFQjQcGil/view?usp=drive_link) |
-| BrainMRI220K | <code>scan</code> <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/12BwJvd6IEZynXM8jkled0ND7t11iuySj/view?usp=drive_link) |
-| BrainMRI220K | <code>slice</code> <code>scan</code> <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1FgOS3W6LhnhH4gJlbASPopUEXChcjeqy/view?usp=drive_link) |
+| CT-RATE-20K | <code>slice</code> + <code>scan</code> | <code>8, 24, 24</code> | [ViT-Base](https://drive.google.com/file/d/1muu7L9H3KaL3nq3fNtN8kKF1eDK3R5Z4/view?usp=drive_link) |
+| BrainMRI220K | <code>scan</code> + <code>study</code> | <code>16, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1uUdcE0TYx3K2YU7FQMfwb2FsFQjQcGil/view?usp=drive_link) |
+| BrainMRI220K | <code>scan</code> + <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/12BwJvd6IEZynXM8jkled0ND7t11iuySj/view?usp=drive_link) |
+| BrainMRI220K | <code>slice</code> + <code>scan</code> + <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1FgOS3W6LhnhH4gJlbASPopUEXChcjeqy/view?usp=drive_link) |
 
 ### Demo
 Chest CT: an example from the external Rad-ChestCT dataset.
