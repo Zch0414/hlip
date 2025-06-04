@@ -38,15 +38,15 @@ def get_args_parser():
     # interpret
     parser.add_argument('--interpret', default=False, action='store_true')
     parser.add_argument('--target', default='Glioma', type=str)
-    parser.add_argument('--save-dir', default='/interpret/', type=str)
+    parser.add_argument('--save-dir', default='./interpret/', type=str)
     return parser
 
 
 def loader(study_path, num_slices):
     imgs = []
-    for series in [os.path.join(study_path, p) for p in os.listdir(study_path)]:
+    for scan in [os.path.join(study_path, p) for p in os.listdir(study_path)]:
         # load image
-        img = torch.load(series, weights_only=True)
+        img = torch.load(scan, weights_only=True)
         if len(img.shape) == 4:
             img = img[:, :, :, 0]
         img = img[None, ...].float()
