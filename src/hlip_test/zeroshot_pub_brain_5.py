@@ -21,9 +21,6 @@ from torch.utils.data import Dataset, DataLoader
 from hlip import visual_encoder
 from hlip.zeroshot_metadata_pub_brain_5 import CLASSNAMES, TEMPLATES, PROMPTS
 
-CSV_ROOT_PATH = "/home/chuizhao/datasets/pub_brain_5/"
-CLASSNAMES = None
-
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)

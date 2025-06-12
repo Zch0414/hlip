@@ -32,63 +32,47 @@ def get_args_parser():
     # data
     parser.add_argument('--data', default='/data/rad_chestct/tst32751.pt')
     parser.add_argument('--zeroshot-prompt', default='volume', type=str)
-    parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "float32", "crop"])
+    parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "crop"])
     parser.add_argument('--target', default='Pulmonary fibrotic sequela', type=str)
 
     return parser
 
 
 def loader(recon_path):
-    input_info = (float(args.input_info[0]), float(args.input_info[1]), str(args.input_info[2]), str(args.input_info[3]))
+    input_info = (float(args.input_info[0]), float(args.input_info[1]), str(args.input_info[2]))
     img = torch.load(recon_path, weights_only=True)
     img = img[None, ...].float()
     img = (img - input_info[0]) / (input_info[1] - input_info[0])
     img = torch.clip(img, 0., 1.)
 
-    if input_info[3] == "crop":
+    if input_info[2] == "crop":
         _, d, h, w = img.shape
         pad_d = max(112 - d, 0)
         pad_h = max(336 - h, 0)
         pad_w = max(336 - w, 0)
-
         pad_d1, pad_d2 = pad_d // 2, pad_d - pad_d // 2
         pad_h1, pad_h2 = pad_h // 2, pad_h - pad_h // 2
         pad_w1, pad_w2 = pad_w // 2, pad_w - pad_w // 2
-
         img = torch.nn.functional.pad(
             img[None, ...], (pad_w1, pad_w2, pad_h1, pad_h2, pad_d1, pad_d2),
             mode='constant', 
             value=0
         ).squeeze(0)
-        
+    
         _, d, h, w = img.shape
         start_d = (d - 112) // 2
         start_h = (h - 336) // 2
         start_w = (w - 336) // 2
-
         img = img[
             :, 
             start_d:start_d + 112,
             start_h:start_h + 336,
             start_w:start_w + 336
         ]
-    elif input_info[3] == "raw":
-        _, d, h, w = img.shape
-        pad_d = max((d+7)//8 * 8 - d, 0)
-        pad_h = max((h+23)//24 * 24  - h, 0)
-        pad_w = max((w+23)//24 * 24 - w, 0)
 
-        pad_d1, pad_d2 = pad_d // 2, pad_d - pad_d // 2
-        pad_h1, pad_h2 = pad_h // 2, pad_h - pad_h // 2
-        pad_w1, pad_w2 = pad_w // 2, pad_w - pad_w // 2
-
-        img = torch.nn.functional.pad(
-            img[None, ...], (pad_w1, pad_w2, pad_h1, pad_h2, pad_d1, pad_d2),
-            mode='constant', 
-            value=0
-        ).squeeze(0)
-    elif input_info[3] == "resize":
+    elif input_info[2] == "resize":
         img = torch.nn.functional.interpolate(img[None, ...], size=(112, 336, 336), mode='trilinear').squeeze(0)
+
     else:
         raise NotImplementedError
     

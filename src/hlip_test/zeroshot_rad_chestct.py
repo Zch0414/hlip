@@ -35,9 +35,9 @@ def get_args_parser():
     parser.add_argument('--lora-text', default=False, action='store_true')
     parser.add_argument('--resume', default='/pretrained/vit_base_chestct_h2_token2744.pt', type=str)
 
-    parser.add_argument('--rad-chestct-root', default='/data/rad_chestct/')
-    parser.add_argument('--input-filename', default='../../data/rad_chestct/files/rad_chestct_labels.csv', type=str)
-    parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "float32", "crop"])
+    parser.add_argument('--data-root', default='/data/rad_chestct/')
+    parser.add_argument('--zeroshot-rad-chestct', default='../../data/rad_chestct/files/rad_chestct_labels.csv', type=str)
+    parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "crop"])
     parser.add_argument('--zeroshot-template', default='volume', type=str)
 
     parser.add_argument('--device', default='cuda:0', type=str)
@@ -65,7 +65,7 @@ def get_data(args, preprocess_fn=None):
                 recon = row['NoteAcc_DEID']
                 self.cts.append((os.path.join(root, recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
             
-            self.input_info = (float(input_info[0]), float(input_info[1]), str(input_info[2]), str(input_info[3]))
+            self.input_info = (float(input_info[0]), float(input_info[1]), str(input_info[2]))
             self.transform = transform
 
         def __len__(self):
@@ -74,66 +74,43 @@ def get_data(args, preprocess_fn=None):
         def __getitem__(self, idx):
             recon, target = self.cts[idx]
 
-            # load in img
             img = torch.load(recon, weights_only=True)
             img = (img - self.input_info[0]) / (self.input_info[1] - self.input_info[0])
             img = torch.clip(img, 0., 1.)
-            if self.input_info[2] == 'uint8':
-                img = (img * 255.).to(torch.uint8) / 255.0
-            
             img = img[None, ...].float()
 
-            # process
             if self.transform:
                 img = self.transform(img)
                 img = torch.as_tensor(img).float()
             else: 
-                if self.input_info[3] == "crop":
-                    # pad
+                if self.input_info[2] == "crop":
                     _, d, h, w = img.shape
                     pad_d = max(112 - d, 0)
                     pad_h = max(336 - h, 0)
                     pad_w = max(336 - w, 0)
-
                     pad_d1, pad_d2 = pad_d // 2, pad_d - pad_d // 2
                     pad_h1, pad_h2 = pad_h // 2, pad_h - pad_h // 2
                     pad_w1, pad_w2 = pad_w // 2, pad_w - pad_w // 2
-
                     img = torch.nn.functional.pad(
                         img[None, ...], (pad_w1, pad_w2, pad_h1, pad_h2, pad_d1, pad_d2),
                         mode='constant', 
                         value=0
                     ).squeeze(0)
                     
-                    # crop
                     _, d, h, w = img.shape
                     start_d = (d - 112) // 2
                     start_h = (h - 336) // 2
                     start_w = (w - 336) // 2
-
                     img = img[
                         :, 
                         start_d:start_d + 112,
                         start_h:start_h + 336,
                         start_w:start_w + 336
                     ]
-                elif self.input_info[3] == "raw":
-                    _, d, h, w = img.shape
-                    pad_d = max((d+7)//8 * 8 - d, 0)
-                    pad_h = max((h+23)//24 * 24  - h, 0)
-                    pad_w = max((w+23)//24 * 24 - w, 0)
 
-                    pad_d1, pad_d2 = pad_d // 2, pad_d - pad_d // 2
-                    pad_h1, pad_h2 = pad_h // 2, pad_h - pad_h // 2
-                    pad_w1, pad_w2 = pad_w // 2, pad_w - pad_w // 2
-
-                    img = torch.nn.functional.pad(
-                        img[None, ...], (pad_w1, pad_w2, pad_h1, pad_h2, pad_d1, pad_d2),
-                        mode='constant', 
-                        value=0
-                    ).squeeze(0)
-                elif self.input_info[3] == "resize":
+                elif self.input_info[2] == "resize":
                     img = torch.nn.functional.interpolate(img[None, ...], size=(112, 336, 336), mode='trilinear').squeeze(0)
+                
                 else:
                     raise NotImplementedError
 
@@ -145,7 +122,7 @@ def get_data(args, preprocess_fn=None):
     
 
     dataset = ZeroShotDataset(
-        args.rad_chestct_root, args.input_filename, args.input_info,
+        args.data_root, args.zeroshot_rad_chestct, args.input_info,
         preprocess_fn
     )
     dataloader = DataLoader(
