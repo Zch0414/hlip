@@ -143,7 +143,7 @@ def get_train_dataset(args, preprocess_fn, tokenizer=None):
 
 
 def get_zeroshot_ct_rate_dataset(args, preprocess_fn):
-    from ..hlip_test.zeroshot_ct_rate import get_data
+    from hlip_test.zeroshot_ct_rate import get_data
     dataloader = get_data(args, preprocess_fn)
     dataloader.num_samples = len(dataloader.dataset)
     dataloader.num_batches = len(dataloader)

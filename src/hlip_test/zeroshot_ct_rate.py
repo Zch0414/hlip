@@ -35,7 +35,7 @@ def get_args_parser():
     parser.add_argument('--lora-text', default=False, action='store_true')
     parser.add_argument('--resume', default='/pretrained/vit_base_chestct_h2_token2744.pt', type=str)
 
-    parser.add_argument('--data-root', default='/data/ct_rate/valid/')
+    parser.add_argument('--data-root', default='/data/ct_rate/')
     parser.add_argument('--zeroshot-ct-rate', default='../../data/ct_rate/metafiles/valid_labels.csv', type=str)
     parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "crop"])
     parser.add_argument('--zeroshot-template', default='volume', type=str)
@@ -64,7 +64,7 @@ def get_data(args, preprocess_fn=None):
             for _, row in df.iterrows():
                 recon = row['VolumeName']
                 recon = recon.rsplit('.', 2)[0]
-                self.cts.append((os.path.join(root, recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
+                self.cts.append((os.path.join(root, 'valid', recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
             
             self.input_info = (float(input_info[0]), float(input_info[1]), str(input_info[2]))
             self.transform = transform

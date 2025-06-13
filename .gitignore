@@ -145,3 +145,5 @@ core.*
 
 # custom
 results/
+wandb/
+logs/

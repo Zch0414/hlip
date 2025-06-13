@@ -230,10 +230,10 @@ def main(args):
         model_kwargs['init_logit_bias'] = -10
 
     # rescan model config
-    for _c in os.listdir('../open_ct/model_configs/'):
+    for _c in os.listdir('../hlip/model_configs/'):
         _m, _e = os.path.splitext(_c)
         if _e.lower() == '.json':
-            with open(os.path.join('../open_ct/model_configs/', _c), 'r') as f:
+            with open(os.path.join('../hlip/model_configs/', _c), 'r') as f:
                 model_cfg = json.load(f)
             _MODEL_CONFIGS[_m] = model_cfg
 
