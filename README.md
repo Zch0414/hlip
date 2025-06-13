@@ -11,9 +11,7 @@
 We propose **H**ierarchical attention for **L**anguage-**I**mage **P**re-training (**HLIP**), inspired by the natural hierarchy of radiology data: slice, scan, and study. With this lightweight attention mechanism, HLIP can be trained directly on uncurated clinical datasets, enabling scalable language-image pre-training in 3D medical imaging. For real-world clinical use, HLIP can be applied to studies containing either a single scan (e.g., chest CT) or multiple scans (e.g., brain MRI).
 
 ## Updates
-- **(Todo)** Release training code.
-- **(2025-06)** Release evaluation code.
-- **(2025-06)** Release data process pipeline.
+- **(2025-06)** Complete the initiation of HLIP repository.
 - **(2025-05)** Release HLIP models trained on chest CT and brain MRI, feel free to try our demos.
 
 ## Getting Started
@@ -95,3 +93,40 @@ python zeroshot_pub_brain_5.py \
 ```
 As there are ~18K studies in the Pub-Brain-5 dataset, evaluation may take ~30 minutes. We first extract the embedding for each study, followed by zero-shot classification. This procedure facilitates the evaluation of prompt engineering. Although we use a fixed input size of <code>48, 224, 224</code>, <code>--num-slices</code> is set to 144 during evaluation, as we found that HLIP can directly transfer and benefit from higher-resolution inputs at test time.
 
+### Training
+
+Our training implementation is closely aligned with [open-clip](https://github.com/mlfoundations/open_clip/tree/main), allowing us to leverage features such as <code>patch dropout</code> and <code>siglip</code>. Below, we provide a training code demo for chest CT. Training on CT-RATE for 20 epochs takes ~6 hours using a node with 4 A40 GPUs.
+
+```bash
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
+  --json-root ../../data/ct_rate/files/ --data-root /path/to/data/ct_rate/ \
+  --train-data raw_annotation --input-info -1150 350 crop \
+  --zeroshot-ct-rate ../../data/ct_rate/metafiles/valid_labels.csv --zeroshot-template volume \
+  --zeroshot-frequency 1 \
+  --save-frequency 1 \
+  --report-to wandb \
+  --wandb-project-name chest_ct \
+  --warmup 377 \
+  --batch-size 16 \
+  --accum-batch 1 \
+  --lr=1e-5 \
+  --wd=0.2 \
+  --epochs=20 \
+  --precision amp \
+  --workers 4 \
+  --grad-checkpointing \
+  --model vit_base_singlescan_h2_token2744 \
+  --use-cxr-bert \
+  --lock-text
+```
+
+Use the following commands for <code>patch dropout</code>:
+```bash
+  --force-patch-dropout 0.5 \
+  --beta2 0.95
+```
+
+Use the following commands for <code>siglip</code>:
+```bash
+  --siglip
+```
