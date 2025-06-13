@@ -30,7 +30,7 @@ def get_args_parser():
     parser.add_argument('--device', default='cuda:0', type=str)
     
     # data
-    parser.add_argument('--data', default='/data/rad_chestct/tst32751.pt')
+    parser.add_argument('--data', default='../../docs/tst32751/tst32751.pt')
     parser.add_argument('--zeroshot-prompt', default='volume', type=str)
     parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "crop"])
     parser.add_argument('--target', default='Pulmonary fibrotic sequela', type=str)

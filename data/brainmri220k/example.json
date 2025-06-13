@@ -1,6 +1,6 @@
 {
     "BRAIN_UM_EB574511": {
-        "scans": {
+        "series": {
             "AX_SSh_TSE_CLEAR": {
                 "num_slices": 30,
                 "view": "axial"
@@ -16,7 +16,7 @@
         ]
     },
     "BRAIN_UM_911A96A9": {
-        "scans": {
+        "series": {
             "SAG_T2-SAG_T2_CLEAR-Protocol": {
                 "num_slices": 15,
                 "view": "sagittal"

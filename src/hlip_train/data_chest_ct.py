@@ -13,14 +13,14 @@ CT_RATE_INVALID_DATA = ['train_1267_a_4', 'train_11755_a_3', 'train_11755_a_4']
 
 class StudyInfo(object):
     def __init__(self, root, key, value):
-        self.recons = []
-        for recon in value['recons']:
-            recon = recon.rsplit('.', 2)[0]
-            if recon in CT_RATE_INVALID_DATA:
+        self.scans = []
+        for scan in value['recons']:
+            scan = scan.rsplit('.', 2)[0]
+            if scan in CT_RATE_INVALID_DATA:
                 continue
             else:
-                self.recons.append(os.path.join(root, key.rsplit('_', 1)[0], key, recon + '.pt'))
-        self.recons = np.array(self.recons)
+                self.scans.append(os.path.join(root, key.rsplit('_', 1)[0], key, scan + '.pt'))
+        self.scans = np.array(self.scans)
         self.report = np.array(value['report'])
 
     def get_report(self, shuffle):
@@ -29,11 +29,11 @@ class StudyInfo(object):
         else:
             return ' '.join(self.report.tolist())
 
-    def get_recons(self, shuffle):
+    def get_scans(self, shuffle):
         if shuffle: # this is for training
-            return np.random.permutation(self.recons).tolist()
+            return np.random.permutation(self.scans).tolist()
         else:
-            return self.recons.tolist()
+            return self.scans.tolist()
 
 
 class StudyDataset(Dataset):
@@ -60,11 +60,11 @@ class StudyDataset(Dataset):
         # get report
         report = self.tokenizer([str(study.get_report(shuffle=True))])[0]
 
-        # get recon
-        recon = study.get_recons(shuffle=True)[0] # CT-RATE is a curated dataset
+        # get scan
+        scan = study.get_scans(shuffle=True)[0] # CT-RATE is a curated dataset
         
-        # load in recon
-        img = torch.load(recon, weights_only=True)
+        # load in scan
+        img = torch.load(scan, weights_only=True)
         img = (img - self.input_info[0]) / (self.input_info[1] - self.input_info[0])
         img = torch.clip(img, 0., 1.)
         img = img[None, ...].float() # [1, d, h, w]

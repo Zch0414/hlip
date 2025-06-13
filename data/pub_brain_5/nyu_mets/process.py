@@ -83,16 +83,6 @@ def transpose2dhw(img_arr, spacing_sitk):
     return img_arr, view
 
 
-def clip_by_percentile(img, min, max):
-    """ Percentile Clip
-    """
-    lower = np.percentile(img, min)
-    upper = np.percentile(img, max)
-    img = np.clip(img, lower, upper)
-    img = (img - img.min()) / (img.max() - img.min() + 1e-8)
-    return img
-
-
 def load_nifti_file(path):
     img_sitk = sitk.ReadImage(path)
     img_sitk = reorient(img_sitk, tgt='RPI')

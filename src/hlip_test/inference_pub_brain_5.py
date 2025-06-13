@@ -38,7 +38,7 @@ def get_args_parser():
     # interpret
     parser.add_argument('--interpret', default=False, action='store_true')
     parser.add_argument('--target', default='Glioma', type=str)
-    parser.add_argument('--save-dir', default='./interpret/', type=str)
+    parser.add_argument('--save-dir', default='./results/', type=str)
     return parser
 
 

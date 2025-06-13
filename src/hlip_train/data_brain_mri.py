@@ -11,7 +11,7 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 class StudyInfo(object):
     def __init__(self, root, key, value):
-        self.scans = np.array([os.path.join(root, key, scans, 'img.pt') for scans in value['scans'].keys()])
+        self.scans = np.array([os.path.join(root, key, scans, 'img.pt') for scans in value['series'].keys()])
         self.report = np.array(value['report'])
     
     def get_report(self, shuffle):
