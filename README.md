@@ -130,3 +130,14 @@ Use the following commands for <code>siglip</code>:
 ```bash
   --siglip
 ```
+
+## Citation
+If you find this repository helpful, please consider citing:
+```bib
+@article{zhao2025towards,
+  title={Towards Scalable Language-Image Pre-training for 3D Medical Imaging},
+  author={Zhao, Chenhui and Lyu, Yiwei and Chowdury, Asadur and Harake, Edward and Kondepudi, Akhil and Rao, Akshay and Hou, Xinhai and Lee, Honglak and Hollon, Todd},
+  journal={arXiv preprint arXiv:2505.21862},
+  year={2025}
+}
+```
