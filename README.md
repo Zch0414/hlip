@@ -91,7 +91,9 @@ python zeroshot_pub_brain_5.py \
   --zeroshot_prompt prompt \
   --zeroshot_template template \
 ```
-As there are ~18K studies in the Pub-Brain-5 dataset, evaluation may take ~30 minutes. We first extract the embedding for each study, followed by zero-shot classification. This procedure facilitates the evaluation of prompt engineering. Although we use a fixed input size of <code>48, 224, 224</code>, <code>--num-slices</code> is set to 144 during evaluation, as we found that HLIP can directly transfer and benefit from higher-resolution inputs at test time.
+As there are ~18K studies in the Pub-Brain-5 dataset, evaluation may take ~30 minutes. We first extract the embedding for each study, followed by zero-shot classification. This procedure supports researchers interested in prompt engineering. 
+
+<code>--num-slices</code> is set to 144 during evaluation, though we use a fixed input size of <code>48, 224, 224</code>. We found that HLIP can directly transfer and benefit from higher-resolution inputs at test time.
 
 ### Training
 
