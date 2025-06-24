@@ -36,6 +36,7 @@ make install-training
 | BrainMRI220K | <code>scan</code> + <code>study</code> | <code>16, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1uUdcE0TYx3K2YU7FQMfwb2FsFQjQcGil/view?usp=drive_link) |
 | BrainMRI220K | <code>scan</code> + <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/12BwJvd6IEZynXM8jkled0ND7t11iuySj/view?usp=drive_link) |
 | BrainMRI220K | <code>slice</code> + <code>scan</code> + <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1FgOS3W6LhnhH4gJlbASPopUEXChcjeqy/view?usp=drive_link) |
+| HeadCT240K | <code>scan</code> + <code>study</code> | <code>8, 16, 16</code> | [ViT-Base](https://drive.google.com/file/d/1rfoz-kzF0iwaMQ-4MuR7F4NlTjtPIZa7/view?usp=drive_link) |
 
 ### Demo
 Chest CT: an example from the external Rad-ChestCT dataset.
