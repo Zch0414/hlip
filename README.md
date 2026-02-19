@@ -155,10 +155,12 @@ Use the following commands for <code>siglip</code>:
 ## Citation
 If you find this repository helpful, please consider citing:
 ```bib
-@article{zhao2025towards,
+@article{zhao2026towards,
   title={Towards Scalable Language-Image Pre-training for 3D Medical Imaging},
-  author={Zhao, Chenhui and Lyu, Yiwei and Chowdury, Asadur and Harake, Edward and Kondepudi, Akhil and Rao, Akshay and Hou, Xinhai and Lee, Honglak and Hollon, Todd},
-  journal={arXiv preprint arXiv:2505.21862},
-  year={2025}
+  author={Chenhui Zhao and Yiwei Lyu and Asadur Zaman Chowdury and Edward S Harake and Akhil Kondepudi and Akshay T Rao and Xinhai Hou and Honglak Lee and Todd C Hollon},
+  journal={Transactions on Machine Learning Research},
+  issn={2835-8856},
+  year={2026},
+  url={https://openreview.net/forum?id=WxHf4EcBWA}
 }
 ```
