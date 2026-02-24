@@ -37,7 +37,6 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 main.py \
 --dist-url "env://localhost:29500"
 ```
 
-
 **Unmasked Fine-tuning**
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 main.py \
@@ -74,6 +73,8 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 main.py \
 --model ablate_rope_clip_vit_base_multiscan_h2_dualdinotxt1568 \
 --dist-url "env://localhost:29500"
 ```
+
+Please note that we use two nodes to train the ViT-Large model.
 
 ## Evaluation Scripts
 
