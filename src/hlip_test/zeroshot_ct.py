@@ -77,7 +77,11 @@ class StudyDataset(Dataset):
         study, target = self.studies[idx]
 
         image = []
-        for scan in [os.path.join(self.data_root, study, p, 'img.pt') for p in os.listdir(os.path.join(self.data_root, study))]:
+        for scan in [
+            os.path.join(self.data_root, study, p, "img.pt")
+            for p in os.listdir(os.path.join(self.data_root, study))
+            if os.path.isfile(os.path.join(self.data_root, study, p, "img.pt"))
+        ]:            
             img = torch.load(scan, weights_only=True)
             img = img.float() / 255.0
             img = self.normalizer(img[None, ...])
@@ -106,12 +110,22 @@ def get_data(data_root, input_file, workers, distributed):
 def compute_metrics(ground_truth, prediction):
     assert prediction.shape == ground_truth.shape
     results = {}
-    
-    try:
-        auc = roc_auc_score(ground_truth, prediction, average="macro", multi_class="ovr")
-    except ValueError:
-        auc = np.nan
 
+    per_label_aucs = []
+    ground_truth = np.asarray(ground_truth)
+    prediction = np.asarray(prediction)
+
+    for k in range(ground_truth.shape[1]):
+        gt = ground_truth[:, k]
+        pred = prediction[:, k]
+
+        # Skip labels that are all-0 or all-1 (AUC undefined)
+        if np.unique(gt).size < 2:
+            continue
+
+        per_label_aucs.append(roc_auc_score(gt, pred))
+
+    auc = float(np.mean(per_label_aucs)) if len(per_label_aucs) > 0 else np.nan
     results.update({
         'auc (ct)': float(auc),
     })

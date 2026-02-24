@@ -359,6 +359,19 @@ def ablate_seqposemb_vit_base_multiscan_h2_dinotxt1568(pretrained=True, **kwargs
     return model
 
 
+# @register_model
+# def ablate_seqposemb_vit_base_multiscan_h1_dualdinotxt1568(pretrained=True, **kwargs):
+#     model_args = dict(
+#         max_num_scans=0, scan_attn_indexes=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11),
+#         global_pool_dinotxt=True, reg_tokens=1,
+#         img_size=(48, 224, 224), patch_size=(6, 16, 16),
+#         in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
+#         embed_layer=PatchEmbed3D, 
+#     )
+#     model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+#     return model
+
+
 @register_model
 def ablate_seqposemb_vit_base_multiscan_h2_dualdinotxt1568(pretrained=True, **kwargs):
     model_args = dict(
@@ -373,9 +386,51 @@ def ablate_seqposemb_vit_base_multiscan_h2_dualdinotxt1568(pretrained=True, **kw
 
 
 @register_model
+def ablate_seqposemb_vit_base_multiscan_h3_dualdinotxt1568(pretrained=True, **kwargs):
+    model_args = dict(
+        max_num_scans=0, slice_attn_indexes=(0, 3, 6, 9), scan_attn_indexes=(1, 4, 7, 10), study_attn_indexes=(2, 5, 8, 11),
+        global_pool_dinotxt=True, reg_tokens=1,
+        img_size=(48, 224, 224), patch_size=(6, 16, 16),
+        in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
+        embed_layer=PatchEmbed3D, 
+    )
+    model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+# @register_model
+# def ablate_seqposemb_vit_large_multiscan_h1_dualdinotxt1568(pretrained=True, **kwargs):
+#     model_args = dict(
+#         max_num_scans=0, scan_attn_indexes=(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23),
+#         global_pool_dinotxt=True, reg_tokens=1,
+#         img_size=(48, 224, 224), patch_size=(6, 16, 16),
+#         in_chans=1, depth = 24, embed_dim=1024, num_heads=16, num_classes=0, no_embed_class=True, pos_embed='none',
+#         embed_layer=PatchEmbed3D,
+#     )
+#     model = custom_create_vision_transformer('vit_large_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+#     return model
+
+
+@register_model
 def ablate_seqposemb_vit_large_multiscan_h2_dualdinotxt1568(pretrained=True, **kwargs):
     model_args = dict(
         max_num_scans=0, scan_attn_indexes=(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22), study_attn_indexes=(5, 11, 17, 23),
+        global_pool_dinotxt=True, reg_tokens=1,
+        img_size=(48, 224, 224), patch_size=(6, 16, 16),
+        in_chans=1, depth = 24, embed_dim=1024, num_heads=16, num_classes=0, no_embed_class=True, pos_embed='none',
+        embed_layer=PatchEmbed3D,
+    )
+    model = custom_create_vision_transformer('vit_large_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def ablate_seqposemb_vit_large_multiscan_h3_dualdinotxt1568(pretrained=True, **kwargs):
+    model_args = dict(
+        max_num_scans=0, 
+        slice_attn_indexes=(0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15, 18, 19, 20, 21),
+        scan_attn_indexes=(4, 10, 16, 22), 
+        study_attn_indexes=(5, 11, 17, 23),
         global_pool_dinotxt=True, reg_tokens=1,
         img_size=(48, 224, 224), patch_size=(6, 16, 16),
         in_chans=1, depth = 24, embed_dim=1024, num_heads=16, num_classes=0, no_embed_class=True, pos_embed='none',
