@@ -2,7 +2,7 @@
 > Official PyTorch implementation of the following paper:\
 > Towards Scalable Language-Image Pre-training for 3D Medical Imaging\
 > University of Michigan\
-> [![TMLR](https://img.shields.io/badge/TMLR-accepted-success.svg)](https://openreview.net/forum?id=WxHf4EcBWA)&nbsp; [![arXiv](https://img.shields.io/badge/arXiv%20paper-2505.21862-b31b1b.svg)](https://arxiv.org/abs/2505.21862)&nbsp;
+> [![TMLR](https://img.shields.io/badge/TMLR-accepted-success.svg)](https://openreview.net/forum?id=WxHf4EcBWA)&nbsp; [![arXiv](https://img.shields.io/badge/arXiv%20paper-2505.21862-b31b1b.svg)](https://arxiv.org/abs/2505.21862)&nbsp; [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/collections/zch0414/hlip)&nbsp;
 
 
 
@@ -18,8 +18,9 @@
 Directly leveraging uncurated clinical studies enables scalable language-image pre-training in 3D medical imaging, as the scale is no longer constrained by the manual effort required from clinicians to select a single representative scan or slice from each study. This paradigm could be more effective when equipped with a hierarchical attention mechanism inspired by the natural structure of the data: slice, scan, and study. We name this framework **H**ierarchical attention for **L**anguage-**I**mage **P**re-training (**HLIP**). For real-world clinical use, HLIP can be applied to studies containing either a single scan (e.g., chest CT) or multiple scans (e.g., brain MRI).
 
 ## Updates
+- **(2026-02)** Assets in **2025-11 (departured)** have been finalized and updated. We apologize for any inconvenience to researchers actively using this repository. This should be our last incremental update to HLIP. We have released four HLIP variants in the Hugging Face collection: [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/collections/zch0414/hlip). The model released in **2025-11** is also included in this collection and is listed as [hlip-2025_10_08](https://huggingface.co/zch0414/hlip-2025_10_08). Technical details are provided in this [blog](https://zch0414.github.io/hlip-ablation/), and the implementation is based on this [code branch](https://github.com/Zch0414/hlip/tree/hlip-ablation). 
 - **(2026-02)** HLIP is accepted by TMLR!
-- **(2025-11)** We release our updated model [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/Zch0414/hlip-2025-10-08), along with a new [code branch](https://github.com/Zch0414/hlip/tree/hlip-ablation) focused on uncurated 3D medical datasets. The technical details are described in this [blog](https://zch0414.github.io/hlip-ablation/).
+- ~~**(2025-11)** We release our updated model [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/Zch0414/hlip-2025-10-08), along with a new [code branch](https://github.com/Zch0414/hlip/tree/hlip-ablation) focused on uncurated 3D medical datasets. The technical details are described in this [blog](https://zch0414.github.io/hlip-ablation/).~~
 - **(2025-06)** Complete the initiation of HLIP repository.
 - **(2025-05)** Release HLIP models trained on chest CT and brain MRI, feel free to try our demos.
 
