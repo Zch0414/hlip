@@ -265,6 +265,7 @@ def custom_checkpoint_filter_fn(state_dict, model, patch_size=(16, 16, 16)):
             if model.patch_embed.__class__ == PatchEmbed3D:
                 if 'weight' in k:
                     if (v.shape[2], v.shape[3]) != (patch_size[1], patch_size[2]):
+                        # FIXME: timm/layers/patch_embed.py#L302-L303
                         v = torch.nn.functional.interpolate(v, size=(patch_size[1], patch_size[2]), mode='bicubic')
 
                     # NOTE: average inflation initialization
