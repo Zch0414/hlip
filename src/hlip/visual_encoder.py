@@ -20,7 +20,12 @@ class HLIPVisualEncoder(VisionTransformer):
         self.slice_attn_indexes = kwargs.pop('slice_attn_indexes', ())
         self.scan_attn_indexes = kwargs.pop('scan_attn_indexes', ())
         self.study_attn_indexes = kwargs.pop('study_attn_indexes', ())
+        self.global_pool_dinotxt = kwargs.pop('global_pool_dinotxt', False)
         super().__init__(**kwargs)
+        
+        # reset num_features
+        if self.global_pool_dinotxt:
+            self.num_features = 2 * self.embed_dim
 
         # reset pos_embed
         spatial_posemb, sequential_posemb = study_pos_embed(
@@ -42,7 +47,7 @@ class HLIPVisualEncoder(VisionTransformer):
         bs, n, d, h, w, _ = x.shape
         spatial_posemb = resample_3d_posemb(self.spatial_posemb, (d, h, w), self.patch_embed.grid_size)
         if self.sequential_posemb is not None:
-            sequential_posemb = resample_1d_posemb(self.sequential_posemb, n, is_train = bs!=1)
+            sequential_posemb = resample_1d_posemb(self.sequential_posemb, n, is_train=self.training)
             pos_embed = sequential_posemb[:, :, None, None, None, :] + spatial_posemb[:, None, :, :, :, :]
             pos_embed = pos_embed.expand(bs, -1, -1, -1, -1, -1)
         else:
@@ -189,7 +194,6 @@ class HLIPVisualEncoder(VisionTransformer):
         x = torch.cat([prefix_tokens, src], dim=2)
         x = x.view(-1, self.num_prefix_tokens+DL//num_slices, C)
         return x
-
         
     def forward_features(self, x):
         x = self.patch_embed(x) # [b, n, d, h, w, c]
@@ -222,10 +226,26 @@ class HLIPVisualEncoder(VisionTransformer):
             x = self._slice2study(x, num_slices, num_scans)
             
         return self.norm(x)
+
+    # NOTE: DION.TXT's head
+    def forward_head_dinotxt(self, x, pre_logits=False):
+        prefix_tokens = x[:, 0:self.num_prefix_tokens]
+        visual_tokens = x[:, self.num_prefix_tokens:].mean(dim=1, keepdim=True)
+        visual_tokens = visual_tokens.expand(-1, self.num_prefix_tokens, -1)
+        x = torch.cat([prefix_tokens, visual_tokens], dim=-1) # [b, num_prefix_tokens, 2*c]
+
+        x = self.fc_norm(x)
+        x = self.head_drop(x)
+        return x if pre_logits else self.head(x)
     
     def forward(self, x):
         x = self.forward_features(x)
-        x = self.forward_head(x)
+        if self.global_pool_dinotxt:
+            x = self.forward_head_dinotxt(x)
+        else:
+            x = self.forward_head(x)
+            if self.num_prefix_tokens == 1:
+                x = x.unsqueeze(1)
         return x
 
 
@@ -245,7 +265,9 @@ def custom_checkpoint_filter_fn(state_dict, model, patch_size=(16, 16, 16)):
             if model.patch_embed.__class__ == PatchEmbed3D:
                 if 'weight' in k:
                     if (v.shape[2], v.shape[3]) != (patch_size[1], patch_size[2]):
+                        # FIXME: timm/layers/patch_embed.py#L302-L303
                         v = torch.nn.functional.interpolate(v, size=(patch_size[1], patch_size[2]), mode='bicubic')
+                    # NOTE: average inflation initialization
                     v = v.sum(dim=1, keepdim=True).unsqueeze(2).repeat(1, 1, patch_size[0], 1, 1).div(patch_size[0])
             else:
                 continue
@@ -274,8 +296,9 @@ def custom_create_vision_transformer(variant, **kwargs):
     )
 
 
+# original HLIP for CT-RATE and Rad-ChestCT
 @register_model
-def vit_base_singlescan_h2_token2744(pretrained=True, **kwargs):
+def vit_base_slice_scan_token2744(pretrained=True, **kwargs):
     model_args = dict(
         max_num_scans=1, slice_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), scan_attn_indexes=(2, 5, 8, 11),
         img_size=(112, 336, 336), patch_size=(8, 24, 24),
@@ -286,20 +309,9 @@ def vit_base_singlescan_h2_token2744(pretrained=True, **kwargs):
     return model
 
 
+# original HLIP for Pub-Brain-5 and RSNA
 @register_model
-def vit_base_multiscan_h2_token588(pretrained=True, **kwargs):
-    model_args = dict(
-        max_num_scans=40, scan_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), study_attn_indexes=(2, 5, 8, 11),
-        img_size=(48, 224, 224), patch_size=(16, 16, 16),
-        in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
-        embed_layer=PatchEmbed3D, 
-    )
-    model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
-    return model
-
-
-@register_model
-def vit_base_multiscan_h2_token1176(pretrained=True, **kwargs):
+def vit_base_scan_study_token1176(pretrained=True, **kwargs):
     model_args = dict(
         max_num_scans=40, scan_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), study_attn_indexes=(2, 5, 8, 11),
         img_size=(48, 224, 224), patch_size=(8, 16, 16),
@@ -311,10 +323,28 @@ def vit_base_multiscan_h2_token1176(pretrained=True, **kwargs):
 
 
 @register_model
-def vit_base_multiscan_h3_token1176(pretrained=True, **kwargs):
+def vit_base_slice_scan_dualdinotxt2744(pretrained=True, **kwargs):
     model_args = dict(
-        max_num_scans=40, slice_attn_indexes=(0, 3, 6, 9), scan_attn_indexes=(1, 4, 7, 10), study_attn_indexes=(2, 5, 8, 11),
-        img_size=(48, 224, 224), patch_size=(8, 16, 16),
+        max_num_scans=1, 
+        slice_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), 
+        scan_attn_indexes=(2, 5, 8, 11),
+        global_pool_dinotxt=True, reg_tokens=1,
+        img_size=(112, 336, 336), patch_size=(8, 24, 24),
+        in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
+        embed_layer=PatchEmbed3D, 
+    )
+    model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def vit_base_scan_study_dualdinotxt1568(pretrained=True, **kwargs):
+    model_args = dict(
+        max_num_scans=0, 
+        scan_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), 
+        study_attn_indexes=(2, 5, 8, 11),
+        global_pool_dinotxt=True, reg_tokens=1,
+        img_size=(48, 224, 224), patch_size=(6, 16, 16),
         in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
         embed_layer=PatchEmbed3D, 
     )

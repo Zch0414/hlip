@@ -51,23 +51,23 @@ Future models will be released on HuggingFace and announced in the **Updates** s
 ### Demo
 Chest CT: an example from the external Rad-ChestCT dataset.
 ```bash
-python inference_rad_chestct.py \
-  --model clip_vit_base_singlescan_h2_token1176 \
+python inference_radchestct.py \
+  --model clip_vit_base_slice_scan_token2744 \
   --use-cxr-bert \
-  --resume /path/to/chestct_clip_vit_base_singlescan_h2_token1176.pt \
+  --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
   --data ../../docs/tst32751/tst32751.pt
 ```
 
 Brain MRI: an example from the external BraTS23 dataset.
 ```bash
-python inference_pub_brain_5.py \
-  --model clip_vit_base_multiscan_h2_token1176 \
-  --resume /path/to/brainmri_clip_vit_base_multiscan_h2_token1176.pt \
+python inference_pubbrain5.py \
+  --model clip_vit_base_scan_study_token1176 \
+  --resume /path/to/clip_vit_base_scan_study_token1176.pt \
   --patch-size 8 16 16 \
-  --num-slices 72 \
+  --num-slices 48 \
   --data ../../docs/BraTS-GLI-00459-000
 ```
-Visualizing the activation with <code>--interpret</code>.
+Visualizing the activation with <code>--interpret</code>. Increasing <code>--num-slcies</code> for better visualization quality.
 
 ### Evaluation
 CT-RATE

@@ -19,21 +19,21 @@ from timm.models.vision_transformer import Attention, Block
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_pub_brain_5 import PROMPTS, TEMPLATES
+from hlip.zeroshot_metadata_pubbrain5 import PROMPTS, TEMPLATES
 
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Inference', add_help=False)
     
     # model
-    parser.add_argument('--model', default='clip_vit_base_multiscan_h2_token588', type=str)
-    parser.add_argument('--patch-size', nargs='+', default=[16, 16, 16], type=int)
-    parser.add_argument('--resume', default='/pretrained/brainmri_clip_vit_base_multiscan_h2_token588.pt', type=str)
+    parser.add_argument('--model', default='clip_vit_base_scan_study_token1176', type=str)
+    parser.add_argument('--patch-size', nargs='+', default=[8, 16, 16], type=int)
+    parser.add_argument('--resume', default='/pretrained/clip_vit_base_scan_study_token1176.pt', type=str)
     parser.add_argument('--device', default='cuda:0', type=str)
     
     # data
     parser.add_argument('--data', default='../../docs/BraTS-GLI-00459-000/')
-    parser.add_argument('--num-slices', default=144, type=int)
+    parser.add_argument('--num-slices', default=48, type=int)
 
     # interpret
     parser.add_argument('--interpret', default=False, action='store_true')
@@ -171,7 +171,7 @@ def inference(model, tokenizer, image, args):
     # inference
     output = model(image=image)
     logit_scale = output['logit_scale']
-    image_features = output['image_features']
+    image_features = output['image_features'][:, 0, :]
     logits_per_image = logit_scale * image_features @ classifier
     probs = logits_per_image.softmax(dim=-1).detach().cpu().numpy()
     for i, prompt in enumerate(PROMPTS['prompt']):
@@ -203,7 +203,7 @@ def inference(model, tokenizer, image, args):
         cam = cam.clamp(min=0).mean(dim=0)
         R = R + torch.matmul(cam, R)
 
-        image_global_relevance = R[0, 1:].reshape(num_scans, grid_size[0], grid_size[1], grid_size[2]).detach().cpu()
+        image_global_relevance = R[0, model.visual.trunk.num_prefix_tokens:].reshape(num_scans, grid_size[0], grid_size[1], grid_size[2]).detach().cpu()
         image_global_relevance = torch.nn.functional.interpolate(image_global_relevance[None, ...], size=(image.shape[3], image.shape[4], image.shape[5]), mode='trilinear').squeeze()
         save_name = f"{args.data.split('/')[-2]}.png"
         show_interpret(image.cpu().squeeze(), image_global_relevance, save_name, args)

@@ -1,7 +1,7 @@
 {
     "embed_dim": 512,
     "vision_cfg": {
-        "timm_model_name": "vit_base_singlescan_h2_token2744",
+        "timm_model_name": "vit_base_slice_scan_token2744",
         "timm_model_pretrained": true,
         "timm_drop_path": 0.2,
         "timm_pool": "token",

@@ -16,7 +16,7 @@ from torchvision.transforms import Normalize
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_rad_chestct import ORGANS, PROMPTS, TEMPLATES
+from hlip.zeroshot_metadata_radchestct import ORGANS, PROMPTS, TEMPLATES
 
 
 def get_args_parser():
@@ -32,20 +32,21 @@ def get_args_parser():
     # data
     parser.add_argument('--data', default='../../docs/tst32751/tst32751.pt')
     parser.add_argument('--zeroshot-prompt', default='volume', type=str)
-    parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "crop"])
+    parser.add_argument('--process-cfg', nargs='+', default=["-1150", "350", "crop"])
     parser.add_argument('--target', default='Pulmonary fibrotic sequela', type=str)
 
     return parser
 
 
-def loader(recon_path, args):
-    input_info = (float(args.input_info[0]), float(args.input_info[1]), str(args.input_info[2]))
-    img = torch.load(recon_path, weights_only=True)
+def loader(args):
+    process_cfg = (float(args.process_cfg[0]), float(args.process_cfg[1]), str(args.process_cfg[2]))
+    img = torch.load(args.data, weights_only=True)
     img = img[None, ...].float()
-    img = (img - input_info[0]) / (input_info[1] - input_info[0])
+    img = (img - process_cfg[0]) / (process_cfg[1] - process_cfg[0])
     img = torch.clip(img, 0., 1.)
 
-    if input_info[2] == "crop":
+    if process_cfg[2] == "crop":
+        # padding
         _, d, h, w = img.shape
         pad_d = max(112 - d, 0)
         pad_h = max(336 - h, 0)
@@ -58,7 +59,8 @@ def loader(recon_path, args):
             mode='constant', 
             value=0
         ).squeeze(0)
-    
+
+        # corpping
         _, d, h, w = img.shape
         start_d = (d - 112) // 2
         start_h = (h - 336) // 2
@@ -70,8 +72,18 @@ def loader(recon_path, args):
             start_w:start_w + 336
         ]
 
-    elif input_info[2] == "resize":
-        img = torch.nn.functional.interpolate(img[None, ...], size=(112, 336, 336), mode='trilinear').squeeze(0)
+    elif process_cfg[2] == "resize":
+        # padding to the longest side. 
+        _, _, h, w = img.shape               
+        size = max(h, w)
+        pad_h = size - h; pad_w = size - w
+        left = pad_w // 2; right = pad_w - left; top = pad_h // 2; bottom = pad_h - top
+        img = torch.nn.functional.pad(img, (left, right, top, bottom), mode="constant", value=0)
+
+        # resize to 384, crop to 336
+        img = torch.nn.functional.interpolate(img, size=(384, 384), mode='bilinear')
+        img = torch.nn.functional.interpolate(img[None, ...], size=(112, 384, 384), mode='nearest-exact')[0]
+        img = img[:, :, 24:360, 24:360]
 
     else:
         raise NotImplementedError
@@ -99,7 +111,7 @@ def inference(model, tokenizer, image, args):
     # inference
     output = model(image=image)
     logit_scale = output['logit_scale']
-    image_features = output['image_features']
+    image_features = output['image_features'][:, 0, :]
     logits_per_image = logit_scale * image_features @ classifier
     probs = logits_per_image.softmax(dim=-1).detach().cpu().numpy()
     for i, prompt in enumerate(PROMPTS[args.target]):
@@ -155,7 +167,7 @@ def main(args):
     tokenizer = get_tokenizer(args.model, trust_remote_code=True)
 
     # inference
-    image = loader(args.data)
+    image = loader(args)
     inference(model, tokenizer, image, args)
 
 

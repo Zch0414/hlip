@@ -17,6 +17,7 @@ CLASSNAMES = [
     "Arterial wall calcification",
 ]
 
+
 ORGANS = {
     "Emphysema": "lung",
     "Atelectasis": "lung",
@@ -35,6 +36,7 @@ ORGANS = {
     "Hiatal hernia": "esophagus",
     "Arterial wall calcification": "aorta",
 }
+
 
 TEMPLATES = {
     "lung": (lambda c: f'The lung shows: {c}.',),
