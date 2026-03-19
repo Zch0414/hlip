@@ -25,6 +25,7 @@ def get_args_parser():
     # model
     parser.add_argument('--model', default='clip_vit_base_singlescan_h2_token2744', type=str)
     parser.add_argument('--lora-text', default=False, action='store_true')
+    parser.add_argument('--lock-text-freeze-layer-norm', default=False, action='store_true')
     parser.add_argument('--use-cxr-bert', default=False, action='store_true')
     parser.add_argument('--resume', default='/pretrained/chestct_clip_vit_base_singlescan_h2_token2744.pt', type=str)
     parser.add_argument('--device', default='cuda:0', type=str)

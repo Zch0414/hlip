@@ -9,13 +9,15 @@ import random
 import argparse
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, recall_score, precision_score, roc_auc_score, confusion_matrix
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score, confusion_matrix
 
 from open_clip import create_model_and_transforms, get_tokenizer, get_input_dtype, build_zero_shot_classifier
 from open_clip.factory import _MODEL_CONFIGS
 from open_clip_train.file_utils import pt_load
 from open_clip_train.precision import get_autocast
+from open_clip_train.distributed import is_master, init_distributed_device, all_gather_object
 
 import torch
 from torch.utils.data import Dataset, DataLoader
@@ -24,8 +26,7 @@ from torchvision.transforms import Normalize
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_ct_rate import CLASSNAMES, ORGANS, TEMPLATES, PROMPTS
-
+from hlip.zeroshot_metadata_ctrate import CLASSNAMES, ORGANS, TEMPLATES, PROMPTS
 
 
 def get_args_parser():
@@ -33,111 +34,122 @@ def get_args_parser():
     parser.add_argument('--model', default='clip_vit_base_singlescan_h2_token2744', type=str)
     parser.add_argument('--use-cxr-bert', default=False, action='store_true')
     parser.add_argument('--lora-text', default=False, action='store_true')
+    parser.add_argument('--lock-text-freeze-layer-norm', default=False, action='store_true')
     parser.add_argument('--resume', default='/pretrained/chestct_clip_vit_base_singlescan_h2_token2744.pt', type=str)
 
     parser.add_argument('--data-root', default='/data/ct_rate/')
-    parser.add_argument('--zeroshot-ct-rate', default='../../data/ct_rate/metafiles/valid_labels.csv', type=str)
-    parser.add_argument('--input-info', nargs='+', default=["-1150", "350", "crop"])
+    parser.add_argument('--input-file', default='../../data/ct_rate/metafiles/valid_labels.csv', type=str)
+    parser.add_argument('--process-cfg', nargs='+', default=["-1150", "350", "crop"])
     parser.add_argument('--zeroshot-template', default='volume', type=str)
-
-    parser.add_argument('--device', default='cuda:0', type=str)
     parser.add_argument('--workers', default=4, type=int)
+    parser.add_argument('--save', default='', type=str)
 
+    # hack argument
+    parser.add_argument('--horovod', default=False, action='store_true')
     return parser
 
 
+# random
 def random_seed(seed=0, rank=0):
     torch.manual_seed(seed + rank)
     np.random.seed(seed + rank)
     random.seed(seed + rank)
 
 
-def get_data(args, preprocess_fn=None):
-    class ZeroShotDataset(Dataset):
-        def __init__(
-            self,
-            root, input_filename, input_info,
-            transform=None,
-        ):
-            self.cts = []
-            df = pd.read_csv(input_filename)
-            for _, row in df.iterrows():
-                recon = row['VolumeName']
-                recon = recon.rsplit('.', 2)[0]
-                self.cts.append((os.path.join(root, 'valid', recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
-            
-            self.input_info = (float(input_info[0]), float(input_info[1]), str(input_info[2]))
-            self.transform = transform
+# data
+class CTRATEDataset(Dataset):
+    def __init__(
+        self,
+        root, 
+        input_filename, 
+        process_cfg,
+    ):
+        self.cts = []
+        df = pd.read_csv(input_filename)
+        for _, row in df.iterrows():
+            recon = row['VolumeName']
+            recon = recon.rsplit('.', 2)[0]
+            self.cts.append((os.path.join(root, 'valid', recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
+        
+        self.process_cfg = (float(process_cfg[0]), float(process_cfg[1]), str(process_cfg[2]))
+        self.normalizer = Normalize(torch.as_tensor(IMAGENET_DEFAULT_MEAN).mean(), torch.as_tensor(IMAGENET_DEFAULT_STD).mean())
 
-        def __len__(self):
-            return len(self.cts)
+    def __len__(self):
+        return len(self.cts)
 
-        def __getitem__(self, idx):
-            recon, target = self.cts[idx]
+    def __getitem__(self, idx):
+        recon, target = self.cts[idx]
 
-            img = torch.load(recon, weights_only=True)
-            img = (img - self.input_info[0]) / (self.input_info[1] - self.input_info[0])
-            img = torch.clip(img, 0., 1.)
-            img = img[None, ...].float()
+        img = torch.load(recon, weights_only=True)
+        img = (img - self.process_cfg[0]) / (self.process_cfg[1] - self.process_cfg[0])
+        img = torch.clip(img, 0., 1.)
+        img = img[None, ...].float()
 
-            if self.transform:
-                img = self.transform(img)
-                img = torch.as_tensor(img).float()
-            else: 
-                if self.input_info[2] == "crop":
-                    _, d, h, w = img.shape
-                    pad_d = max(112 - d, 0)
-                    pad_h = max(336 - h, 0)
-                    pad_w = max(336 - w, 0)
-                    pad_d1, pad_d2 = pad_d // 2, pad_d - pad_d // 2
-                    pad_h1, pad_h2 = pad_h // 2, pad_h - pad_h // 2
-                    pad_w1, pad_w2 = pad_w // 2, pad_w - pad_w // 2
-                    img = torch.nn.functional.pad(
-                        img[None, ...], (pad_w1, pad_w2, pad_h1, pad_h2, pad_d1, pad_d2),
-                        mode='constant', 
-                        value=0
-                    ).squeeze(0)
-                    
-                    _, d, h, w = img.shape
-                    start_d = (d - 112) // 2
-                    start_h = (h - 336) // 2
-                    start_w = (w - 336) // 2
-                    img = img[
-                        :, 
-                        start_d:start_d + 112,
-                        start_h:start_h + 336,
-                        start_w:start_w + 336
-                    ]
-                
-                elif self.input_info[2] == "resize":
-                    img = torch.nn.functional.interpolate(img[None, ...], size=(112, 336, 336), mode='trilinear').squeeze(0)
-                
-                else:
-                    raise NotImplementedError
+        if self.process_cfg[2] == "crop":
+            # padding
+            _, d, h, w = img.shape
+            pad_d = max(112 - d, 0)
+            pad_h = max(336 - h, 0)
+            pad_w = max(336 - w, 0)
+            pad_d1, pad_d2 = pad_d // 2, pad_d - pad_d // 2
+            pad_h1, pad_h2 = pad_h // 2, pad_h - pad_h // 2
+            pad_w1, pad_w2 = pad_w // 2, pad_w - pad_w // 2
+            img = torch.nn.functional.pad(
+                img[None, ...], (pad_w1, pad_w2, pad_h1, pad_h2, pad_d1, pad_d2),
+                mode='constant', 
+                value=0
+            ).squeeze(0)
 
-            # normalize
-            normalizer = Normalize(torch.as_tensor(IMAGENET_DEFAULT_MEAN).mean(), torch.as_tensor(IMAGENET_DEFAULT_STD).mean())
-            img = normalizer(img)
+            # corpping
+            _, d, h, w = img.shape
+            start_d = (d - 112) // 2
+            start_h = (h - 336) // 2
+            start_w = (w - 336) // 2
+            img = img[
+                :, 
+                start_d:start_d + 112,
+                start_h:start_h + 336,
+                start_w:start_w + 336
+            ]
 
-            return recon, img[None, ...], torch.as_tensor(target)
+        elif self.process_cfg[2] == "resize":
+            # padding to the longest side. 
+            _, _, h, w = img.shape               
+            size = max(h, w)
+            pad_h = size - h; pad_w = size - w
+            left = pad_w // 2; right = pad_w - left; top = pad_h // 2; bottom = pad_h - top
+            img = torch.nn.functional.pad(img, (left, right, top, bottom), mode="constant", value=0)
+
+            # resize to 384, crop to 336
+            img = torch.nn.functional.interpolate(img, size=(384, 384), mode='bilinear')
+            img = torch.nn.functional.interpolate(img[None, ...], size=(112, 384, 384), mode='nearest-exact')[0]
+            img = img[:, :, 24:360, 24:360]
+
+        else:
+            raise NotImplementedError
+
+        # normalize
+        img = self.normalizer(img)
+
+        return {'image': img[None, ...], 'target': torch.as_tensor(target, dtype=torch.long)}
     
 
-    dataset = ZeroShotDataset(
-        args.data_root, args.zeroshot_ct_rate, args.input_info,
-        preprocess_fn
-    )
+def get_data(data_root, input_file, process_cfg, workers, distributed):
+    dataset = CTRATEDataset(data_root, input_file, process_cfg)
+    sampler = torch.utils.data.distributed.DistributedSampler(dataset) if distributed else None
     dataloader = DataLoader(
         dataset,
-        batch_size=1,
+        batch_size=1, # only support 1 during evaluation; the speed bottleneck is data loading
         shuffle=False,
-        num_workers=args.workers,
+        sampler=sampler,
+        num_workers=workers,
         pin_memory=True,
-        sampler=None,
         drop_last=False,
     )
     return dataloader
 
 
+# metric
 def find_threshold(y_true, y_score):
     """
     Copy from https://github.com/alibaba-damo-academy/fvlm/blob/d768ec1546fb825fcc9ea9b3e7b2754a69f870c1/calc_metrics.py#L8C1-L8C32
@@ -173,8 +185,57 @@ def find_threshold(y_true, y_score):
     return best_threshold
 
 
-def zero_shot(model, tokenizer, dataloader, args):
-    model.eval()
+def compute_ctrate_metrics(ground_truth, prediction):
+    assert prediction.shape == ground_truth.shape and prediction.shape[1] == len(CLASSNAMES), (
+        f"Expected [N, {len(CLASSNAMES)}] inputs."
+    )
+
+    ground_truth = ground_truth.cpu()
+    prediction = prediction.cpu()
+    results = {}
+    aucs, accs, f1ws, precisions, recalls = [], [], [], [], []
+
+    for idx, key in enumerate(CLASSNAMES):
+        y_true = ground_truth[:, idx].to(torch.int64).numpy()
+        y_score = prediction[:, idx].to(torch.float32).numpy()
+
+        # `find_threshold` assumes both classes are present. Fall back to the
+        # default binary cutoff when the eval slice is degenerate.
+        threshold = find_threshold(y_true, y_score)
+        y_pred = (y_score > threshold).astype(int)
+
+        acc = accuracy_score(y_true, y_pred)
+        f1w = f1_score(y_true, y_pred, average='weighted', zero_division=0)
+        precision = precision_score(y_true, y_pred, zero_division=0)
+        recall = recall_score(y_true, y_pred, zero_division=0)
+        try:
+            auc = roc_auc_score(y_true, y_score)
+        except ValueError:
+            auc = np.nan
+
+        results[f'auc (ctrate_{key})'] = float(auc)
+        results[f'acc (ctrate_{key})'] = float(acc)
+        results[f'weighted_f1 (ctrate_{key})'] = float(f1w)
+        results[f'precision (ctrate_{key})'] = float(precision)
+        results[f'recall (ctrate_{key})'] = float(recall)
+
+        aucs.append(auc)
+        accs.append(acc)
+        f1ws.append(f1w)
+        precisions.append(precision)
+        recalls.append(recall)
+
+    results.update({
+        'auc (ctrate)': float(np.nanmean(aucs)),
+        'acc (ctrate)': float(np.nanmean(accs)),
+        'weighted_f1 (ctrate)': float(np.nanmean(f1ws)),
+        'precision (ctrate)': float(np.nanmean(precisions)),
+        'recall (ctrate)': float(np.nanmean(recalls)),
+    })
+    return results
+
+
+def run(model, tokenizer, dataloader, args):
     device = torch.device(args.device)
     autocast = get_autocast('amp', device_type=device.type)
     input_dtype = get_input_dtype('amp')
@@ -197,110 +258,34 @@ def zero_shot(model, tokenizer, dataloader, args):
                 }
             )
 
+    prediction = []
+    ground_truth = []
     with torch.inference_mode():
-        columns = ['recon'] + CLASSNAMES
-        rows = []
-        labels = {key: [] for key in CLASSNAMES}
-        logits = {key: [] for key in CLASSNAMES}
-        preds = {key: [] for key in CLASSNAMES}
-        
-        for batch in tqdm(dataloader, total=len(dataloader)):
-            recon, image, target = batch
-            image = image.to(device=device, dtype=input_dtype)
-            target = target.to(device)
-            row = []
-            row.append(recon[0])
-            
-            for idx in range(target.shape[1]):
-                labels[CLASSNAMES[idx]].append(target[0, idx].cpu().float().item())
-            
+        for batch in tqdm(dataloader, total=len(dataloader), disable=getattr(args, 'rank', 0) != 0):
+            image = batch['image'].to(device=device, dtype=input_dtype, non_blocking=True)
+            ground_truth.append(batch['target'].cpu())
+
             with autocast():
-                output = model(image=image)
-                image_features = output['image_features']
-                logit_scale = output['logit_scale']
-                
-                # predict
-                for key, value in classifier.items():
-                    logits_per_image = logit_scale * image_features @ value
-                    logits_per_image = logits_per_image.softmax(dim=1)
-                    row.append(logits_per_image[0, 1].cpu().float().item())
-                    logits[key].append(logits_per_image[0, 1].cpu().float().item())
-                    preds[key].append(logits_per_image.argmax(-1).cpu().float().item())
+                model_out = model(image=image)
+                image_features = model_out['image_features'][:, 0, :]
+                logit_scale = model_out['logit_scale']
 
-            rows.append(row)
+                batch_prediction = []
+                for key in CLASSNAMES:
+                    logits_per_image = logit_scale * image_features @ classifier[key]
+                    probs_per_image = logits_per_image.softmax(dim=-1)
+                    batch_prediction.append(probs_per_image[:, 1].detach().cpu())
 
-        results_dir = f"./results/ct_rate/{args.model}/"
-        os.makedirs(results_dir, exist_ok=True)
-        df = pd.DataFrame(rows, columns=columns)
-        df.to_csv(os.path.join(results_dir, f'logits_{args.zeroshot_template}.csv'), index=False)
-        print(f"CSV file created: {os.path.join(results_dir, f'logits_{args.zeroshot_template}.csv')}")
+                prediction.append(torch.stack(batch_prediction, dim=1))
 
-        results = {key: {} for key in CLASSNAMES}
-        mean_balanced_acc, mean_weighted_f1, mean_recall, mean_precision = 0., 0., 0., 0.
-        for key in CLASSNAMES:
-            balanced_acc = balanced_accuracy_score(np.array(labels[key]), np.array(preds[key]))
-            mean_balanced_acc += balanced_acc / len(CLASSNAMES)
-
-            weighted_f1 = f1_score(np.array(labels[key]), np.array(preds[key]), average='weighted') 
-            mean_weighted_f1 += weighted_f1 / len(CLASSNAMES)
-
-            recall = recall_score(np.array(labels[key]), np.array(preds[key])) 
-            mean_recall += recall / len(CLASSNAMES)
-
-            precision = precision_score(np.array(labels[key]), np.array(preds[key])) 
-            mean_precision += precision / len(CLASSNAMES)
-
-            results[key].update({
-                'acc (balanced)': balanced_acc,
-                'f1 (weighted)': weighted_f1,
-                'recall': recall,
-                'precision': precision,
-            })
-        results['mean'] = {
-            'mean acc (balanced)': mean_balanced_acc,
-            'mean f1 (weighted)': mean_weighted_f1,
-            'mean recall': mean_recall,
-            'mean precision': mean_precision,
-        }
-
-        mean_auc, mean_acc, mean_weighted_f1, mean_recall, mean_precision = 0., 0., 0., 0., 0.
-        for key in CLASSNAMES:
-            threshold = find_threshold(np.array(labels[key]), np.array(logits[key]))
-
-            auc = roc_auc_score(np.array(labels[key]), np.array(logits[key])) 
-            mean_auc += auc / len(CLASSNAMES)
-
-            acc = accuracy_score(np.array(labels[key]), (np.array(logits[key]) > threshold).astype(int)) 
-            mean_acc += acc / len(CLASSNAMES)
-
-            weighted_f1 = f1_score(np.array(labels[key]), (np.array(logits[key]) > threshold).astype(int), average='weighted')
-            mean_weighted_f1 += weighted_f1 / len(CLASSNAMES)
-
-            recall = recall_score(np.array(labels[key]), (np.array(logits[key]) > threshold).astype(int)) 
-            mean_recall += recall / len(CLASSNAMES)
-
-            precision = precision_score(np.array(labels[key]), (np.array(logits[key]) > threshold).astype(int)) 
-            mean_precision += precision / len(CLASSNAMES)
-
-            results[key].update({
-                'auc': auc,
-                '* acc (balanced)': acc,
-                '* f1 (weighted)': weighted_f1,
-                '* recall': recall,
-                '* precision': precision,
-            })
-        results['* mean'] = {
-            'mean auc': mean_auc,
-            '* mean acc (balanced)': mean_acc,
-            '* mean f1 (weighted)': mean_weighted_f1,
-            '* mean recall': mean_recall,
-            '* mean precision': mean_precision,
-        }
-
-    return results
+    return torch.cat(ground_truth, dim=0), torch.cat(prediction, dim=0)
 
 
 def main(args):
+    if args.zeroshot_template != 'organ':
+        PROMPTS["Lung nodule"] = ("Not lung nodule", "Lung nodule")
+        PROMPTS["Lung opacity"] = ("Not lung opacity", "Lung opacity")
+
     if torch.cuda.is_available():
         # This enables tf32 on Ampere GPUs which is only 8% slower than
         # float16 and almost as accurate as float32
@@ -309,10 +294,13 @@ def main(args):
         torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = False
 
-    if args.zeroshot_template != 'organ':
-        PROMPTS["Lung nodule"] = ("Not lung nodule", "Lung nodule")
-        PROMPTS["Lung opacity"] = ("Not lung opacity", "Lung opacity")
-
+    device = init_distributed_device(args)
+    if args.distributed:
+        print(
+            f'Running in distributed mode with multiple processes. Device: {args.device}.'
+            f'Process (global: {args.rank}, local {args.local_rank}), total {args.world_size}.')
+    else:
+        print(f'Running with a single process. Device {args.device}.')
     random_seed(0, 0)
 
     # create model
@@ -343,21 +331,52 @@ def main(args):
         cxr_bert.to(device=args.device)
         model.text.transformer = cxr_bert
 
+    # load checkpoint
     checkpoint = pt_load(args.resume, map_location='cpu')
     sd = checkpoint['state_dict']
     sd = {k[len('module.'):]: v for k, v in sd.items()}
     model.load_state_dict(sd)
     tokenizer = get_tokenizer(args.model, trust_remote_code=True)
 
-    # create dataset
-    data = get_data(args, None)
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[device], static_graph=False)
 
-    # zero shot
-    results = zero_shot(model, tokenizer, data, args)
-    results_dir = f"./results/ct_rate/{args.model}/"
-    os.makedirs(results_dir, exist_ok=True)
-    with open(os.path.join(results_dir, f'results_{args.zeroshot_template}.json'), 'w') as f:
-        json.dump(results, f, indent=4)
+    # create dataset
+    dataloader = get_data(
+        data_root=args.data_root,
+        input_file=args.input_file,
+        process_cfg=args.process_cfg,
+        workers=args.workers,
+        distributed=args.distributed
+    )
+
+    # run
+    if args.distributed and not args.horovod:
+        model = model.module
+
+    model.eval()
+    ground_truth, prediction = run(model, tokenizer, dataloader, args)
+    if args.distributed:
+        prediction = all_gather_object(args, prediction)
+        ground_truth = all_gather_object(args, ground_truth)
+    else:
+        prediction = [prediction]
+        ground_truth = [ground_truth]
+
+    if is_master(args):
+        prediction = torch.cat(prediction, dim=0)
+        ground_truth = torch.cat(ground_truth, dim=0)
+
+        print(f'Compute metrics on {prediction.shape[0]} cases.')
+        results = compute_ctrate_metrics(ground_truth, prediction)
+        for k, v in results.items():
+            print(f'{k}: {v}')
+        if args.save:
+            p = Path(args.save)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            with p.open("a", encoding="utf-8") as f:   # append one JSON per line
+                f.write(json.dumps(results, ensure_ascii=False))
+                f.write("\n")
 
 
 if __name__ == '__main__':
