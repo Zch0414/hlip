@@ -31,11 +31,11 @@ from hlip.zeroshot_metadata_ctrate import CLASSNAMES, ORGANS, TEMPLATES, PROMPTS
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)
-    parser.add_argument('--model', default='clip_vit_base_singlescan_h2_token2744', type=str)
+    parser.add_argument('--model', default='clip_vit_base_slice_scan_token2744', type=str)
     parser.add_argument('--use-cxr-bert', default=False, action='store_true')
     parser.add_argument('--lora-text', default=False, action='store_true')
     parser.add_argument('--lock-text-freeze-layer-norm', default=False, action='store_true')
-    parser.add_argument('--resume', default='/pretrained/chestct_clip_vit_base_singlescan_h2_token2744.pt', type=str)
+    parser.add_argument('--resume', default='/pretrained/chestct_clip_vit_base_slice_scan_token2744.pt', type=str)
 
     parser.add_argument('--data-root', default='/data/ct_rate/')
     parser.add_argument('--input-file', default='../../data/ct_rate/metafiles/valid_labels.csv', type=str)
@@ -69,7 +69,7 @@ class CTRATEDataset(Dataset):
         for _, row in df.iterrows():
             recon = row['VolumeName']
             recon = recon.rsplit('.', 2)[0]
-            self.cts.append((os.path.join(root, 'valid', recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
+            self.cts.append((os.path.join(root, recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
         
         self.process_cfg = (float(process_cfg[0]), float(process_cfg[1]), str(process_cfg[2]))
         self.normalizer = Normalize(torch.as_tensor(IMAGENET_DEFAULT_MEAN).mean(), torch.as_tensor(IMAGENET_DEFAULT_STD).mean())

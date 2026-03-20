@@ -72,20 +72,18 @@ Visualizing the activation with <code>--interpret</code>. Increasing <code>--num
 ### Evaluation
 CT-RATE
 ```bash
-python zeroshot_ct_rate.py \
-  --model clip_vit_base_singlescan_h2_token2744 \
-  --use-cxr-bert \
-  --resume /path/to/chestct_clip_vit_base_singlescan_h2_token2744.pt \
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_ctrate.py \
+  --model clip_vit_base_slice_scan_token2744 \
+  --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
   --data-root /data/ct_rate/ \
   --zeroshot-template volume
 ```
 
 Rad-ChestCT
 ```bash
-python zeroshot_rad_chestct.py \
-  --model clip_vit_base_singlescan_h2_token2744 \
-  --use-cxr-bert \
-  --resume /path/to/chestct_clip_vit_base_singlescan_h2_token2744.pt \
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_radchestct.py \
+  --model clip_vit_base_slice_scan_token2744 \
+  --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
   --data-root /data/rad_chestct/ \
   --zeroshot-template volume
 ```

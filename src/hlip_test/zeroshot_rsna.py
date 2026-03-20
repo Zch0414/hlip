@@ -32,8 +32,8 @@ from hlip.zeroshot_metadata_rsna import CLASSNAMES, TEMPLATES, PROMPTS
 # arguments
 def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)
-    parser.add_argument('--model', default='clip_vit_base_multiscan_h2_token1176', type=str)
-    parser.add_argument('--resume', default='/pretrained/headct_clip_vit_base_multiscan_h2_token1176.pt', type=str)
+    parser.add_argument('--model', default='clip_vit_base_scan_study_token1176', type=str)
+    parser.add_argument('--resume', default='/pretrained/clip_vit_base_scan_study_token1176.pt', type=str)
     parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., Zch0414/hlip-2025-10-08')
     
     parser.add_argument('--data-root', default='/path/to/rsna')
