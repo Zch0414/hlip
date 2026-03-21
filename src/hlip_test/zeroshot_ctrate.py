@@ -81,9 +81,9 @@ class CTRATEDataset(Dataset):
         recon, target = self.cts[idx]
 
         img = torch.load(recon, weights_only=True)
-        img = (img - self.process_cfg[0]) / (self.process_cfg[1] - self.process_cfg[0])
+        img = (img.float() - self.process_cfg[0]) / (self.process_cfg[1] - self.process_cfg[0])
         img = torch.clip(img, 0., 1.)
-        img = img[None, ...].float()
+        img = img[None, ...]
 
         if self.process_cfg[2] == "crop":
             # padding
@@ -236,6 +236,10 @@ def compute_ctrate_metrics(ground_truth, prediction):
 
 
 def run(model, tokenizer, dataloader, args):
+    if args.zeroshot_template != 'organ':
+        PROMPTS["Lung nodule"] = ("Not lung nodule", "Lung nodule")
+        PROMPTS["Lung opacity"] = ("Not lung opacity", "Lung opacity")
+    
     device = torch.device(args.device)
     autocast = get_autocast('amp', device_type=device.type)
     input_dtype = get_input_dtype('amp')
@@ -282,10 +286,6 @@ def run(model, tokenizer, dataloader, args):
 
 
 def main(args):
-    if args.zeroshot_template != 'organ':
-        PROMPTS["Lung nodule"] = ("Not lung nodule", "Lung nodule")
-        PROMPTS["Lung opacity"] = ("Not lung opacity", "Lung opacity")
-
     if torch.cuda.is_available():
         # This enables tf32 on Ampere GPUs which is only 8% slower than
         # float16 and almost as accurate as float32

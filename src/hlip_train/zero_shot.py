@@ -3,14 +3,17 @@ import sys
 sys.path.append(os.path.abspath('.'))
 sys.path.append(os.path.abspath('..'))
 
-import logging
+import torch
+from open_clip_train.distributed import is_master, all_gather_object
 
-from hlip.zeroshot_metadata_ct_rate import PROMPTS
-from hlip_test.zeroshot_ct_rate import zero_shot as run_ct_rate
+from hlip_test.zeroshot_ctrate import run as run_ct_rate
+from hlip_test.zeroshot_ctrate import compute_ctrate_metrics
+from hlip_test.zeroshot_radchestct import run as run_rad_chestct
+from hlip_test.zeroshot_radchestct import compute_radchestct_metrics
 
 
 def zero_shot_eval(model, data, epoch, args, tokenizer):
-    if 'zeroshot-ct-rate' not in data:
+    if 'ct-rate' not in data and 'rad-chestct' not in data:
         return {}
     if args.zeroshot_frequency == 0:
         return {}
@@ -18,12 +21,30 @@ def zero_shot_eval(model, data, epoch, args, tokenizer):
         return {}
     if args.distributed and not args.horovod:
         model = model.module
-    if args.zeroshot_template != 'organ':
-        PROMPTS["Lung nodule"] = ("Not lung nodule", "Lung nodule")
-        PROMPTS["Lung opacity"] = ("Not lung opacity", "Lung opacity")
 
+    if 'ct-rate' in data:
+        ground_truth, prediction = run_ct_rate(model, tokenizer, data['ct-rate'], args)
+        ct_rate_ground_truth = all_gather_object(args, ground_truth)
+        ct_rate_prediction = all_gather_object(args, prediction)
+    if 'rad-chestct' in data:
+        ground_truth, prediction = run_rad_chestct(model, tokenizer, data['rad-chestct'], args)
+        rad_chestct_ground_truth = all_gather_object(args, ground_truth)
+        rad_chestct_prediction = all_gather_object(args, prediction)
+
+    if not is_master(args):
+        return {}
     
-    logging.info('Starting Zero-Shot CT-RATE.')
-    result = run_ct_rate(model, tokenizer, data['zeroshot-ct-rate'].dataloader, args)
-    logging.info('Finished Zero-Shot CT-RATE.')
-    return result['* mean']
+    results = {}
+    if 'ct-rate' in data:
+        prediction = torch.cat(ct_rate_prediction, dim=0)
+        ground_truth = torch.cat(ct_rate_ground_truth, dim=0)
+        ct_rate_results = compute_ctrate_metrics(ground_truth, prediction)
+        for key in ['auc (ctrate)', 'acc (ctrate)', 'weighted_f1 (ctrate)']:
+            results.update(ct_rate_results[key])
+    if 'rad-chestct' in data:
+        prediction = torch.cat(rad_chestct_prediction, dim=0)
+        ground_truth = torch.cat(rad_chestct_ground_truth, dim=0)
+        rad_chestct_results = compute_radchestct_metrics(ground_truth, prediction)
+        for key in ['auc (radchestct)', 'acc (radchestct)', 'weighted_f1 (radchestct)']:
+            results.update(rad_chestct_results[key])
+    return results
