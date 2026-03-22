@@ -75,7 +75,8 @@ CT-RATE
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_ctrate.py \
   --model clip_vit_base_slice_scan_token2744 \
   --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
-  --data-root /data/ct_rate/ \
+  --data-root /data/ct_rate/valid/ \
+  --input-file ../../data/ct_rate/metafiles/valid_labels.csv \
   --zeroshot-template volume
 ```
 
@@ -85,68 +86,73 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_radchestct.
   --model clip_vit_base_slice_scan_token2744 \
   --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
   --data-root /data/rad_chestct/ \
+  --input-file ../../data/rad_chestct/files/rad_chestct_labels.csv \
   --zeroshot-template volume
 ```
 
-Brain MRI
+Pub-Brain-5
 ```bash
-python pub_brain_5_embed.py \
-  --model clip_vit_base_multiscan_h2_token1176 \
-  --resume /path/to/brainmri_clip_vit_base_multiscan_h2_token1176.pt \
-  --data-root /path/to/pub_brain_5
-  --num-slices 144 \
-  --embed-root /path/to/pub_brain_5_embed
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_pubbrain5.py \
+  --model clip_vit_base_scan_study_token1176 \
+  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --data-root /data/pub_brain_5/ \
+  --input-file ../../data/pub_brain_5/pub_brain_5.csv
 ```
-```bash
-python zeroshot_pub_brain_5.py \
-  --model clip_vit_base_multiscan_h2_token1176 \
-  --resume /path/to/brainmri_clip_vit_base_multiscan_h2_token1176.pt \
-  --embed-root /path/to/pub_brain_5_embed \
-  --num-slices 144 \
-  --zeroshot_prompt prompt \
-  --zeroshot_template template
-```
-As there are ~18K studies in the Pub-Brain-5 dataset, evaluation may take ~30 minutes. We first extract the embedding for each study, followed by zero-shot classification. This procedure supports researchers interested in prompt engineering. 
 
-<code>--num-slices</code> is set to 144 during evaluation, though we use a fixed input size of <code>48, 224, 224</code>. We found that HLIP can directly transfer and benefit from higher-resolution inputs at test time.
+RSNA
+```bash
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_rsna.py \
+  --model clip_vit_base_scan_study_token1176 \
+  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --data-root /data/rsna/ \
+  --input-file ../../data/rsna/rsna.csv
+```
 
 ### Training
 
-Our training implementation is closely aligned with [open-clip](https://github.com/mlfoundations/open_clip/tree/main), allowing us to leverage features such as <code>patch dropout</code> and <code>siglip</code>. Below, we provide a training code demo for chest CT. Training on CT-RATE for 20 epochs takes ~6 hours using a node with 4 A40 GPUs.
-
+Below, we provide a training script to reproduce our results on CT-RATE using the original reports as supervision. Training for 20 epochs takes approximately 6 hours on a single node with 4 A40 GPUs.
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
-  --logs_dir /path/to/logs/ \
-  --json-root ../../data/ct_rate/files/ --data-root /path/to/data/ct_rate/ \
-  --train-data raw_annotation --input-info -1150 350 crop \
-  --zeroshot-ct-rate ../../data/ct_rate/metafiles/valid_labels.csv --zeroshot-template volume \
+  --benchmark-type ct-rate \
+  --logs-dir /path/to/logs/ \
   --zeroshot-frequency 1 \
+  --zeroshot-template volume \
   --save-frequency 1 \
+  --train-data /path/to/ct_rate/train/ \
+  --train-file ../../data/ct_rate/files/raw_annotation.json \
+  --image-process-cfg -1150 350 crop \
+  --text-process-cfg report \
+  --ct-rate data_root='"/path/to/ct_rate/valid/"' input_file='"../../data/ct_rate/metafiles/valid_labels.csv"' \
   --report-to wandb \
-  --wandb-project-name chest_ct \
-  --warmup 377 \
-  --batch-size 16 \
-  --accum-batch 1 \
-  --lr=1e-5 \
+  --wandb-project-name hlip \
+  --warmup 47 \
+  --batch-size 32 \
+  --accum-batch 4 \
+  --lr=8e-5 \
   --wd=0.2 \
+  --force-patch-dropout 0.0 \
   --epochs=20 \
   --precision amp \
   --workers 4 \
+  --local-loss \
+  --gather-with-grad \
   --grad-checkpointing \
-  --model clip_vit_base_singlescan_h2_token2744 \
+  --model clip_vit_base_slice_scan_token2744 \
   --use-cxr-bert \
-  --lock-text
+  --lock-text \
+  --dist-url "env://localhost:29500"
 ```
 
-Use the following commands for <code>patch dropout</code>:
+Our training implementation is closely aligned with [open-clip](https://github.com/mlfoundations/open_clip/tree/main), allowing us to leverage features such as <code>patch dropout</code> and <code>siglip</code>.
+
+For <code>patch dropout</code>, try the following commands:
 ```bash
   --force-patch-dropout 0.5 \
   --beta2 0.95
 ```
 
-Use the following commands for <code>siglip</code>:
+For <code>siglip</code>, you can try it using the following commands, but make sure to modify the model configuration beforehand:
 ```bash
-  --model siglip_vit_base_singlescan_h2_token2744 \
   --beta2 0.95 \
   --siglip
 ```

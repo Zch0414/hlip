@@ -40,11 +40,11 @@ def zero_shot_eval(model, data, epoch, args, tokenizer):
         ground_truth = torch.cat(ct_rate_ground_truth, dim=0)
         ct_rate_results = compute_ctrate_metrics(ground_truth, prediction)
         for key in ['auc (ctrate)', 'acc (ctrate)', 'weighted_f1 (ctrate)']:
-            results.update(ct_rate_results[key])
+            results.update({key: ct_rate_results[key]})
     if 'rad-chestct' in data:
         prediction = torch.cat(rad_chestct_prediction, dim=0)
         ground_truth = torch.cat(rad_chestct_ground_truth, dim=0)
         rad_chestct_results = compute_radchestct_metrics(ground_truth, prediction)
         for key in ['auc (radchestct)', 'acc (radchestct)', 'weighted_f1 (radchestct)']:
-            results.update(rad_chestct_results[key])
+            results.update({key: rad_chestct_results[key]})
     return results

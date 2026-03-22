@@ -56,6 +56,9 @@ class StudyDataset(Dataset):
             studies = json.load(file)
         self.studies = [StudyInfo(data_root, key, value) for key, value in studies.items()]
 
+        # debug
+        # self.studies = self.studies[:1536]
+
         self.text_process_cfg = text_process_cfg
         self.num_scans = num_scans
     
@@ -115,7 +118,7 @@ class StudyDataset(Dataset):
 def get_dataset(args, tokenizer, is_train):
     dataset = StudyDataset(
         data_root=args.train_data if is_train else args.valid_data,
-        input_file=args.input_file,
+        input_file=args.train_file if is_train else args.valid_file,
         text_process_cfg=args.text_process_cfg,
         tokenizer=tokenizer,
         is_train=is_train

@@ -37,7 +37,7 @@ def get_args_parser():
     parser.add_argument('--lock-text-freeze-layer-norm', default=False, action='store_true')
     parser.add_argument('--resume', default='/pretrained/chestct_clip_vit_base_slice_scan_token2744.pt', type=str)
 
-    parser.add_argument('--data-root', default='/data/ct_rate/')
+    parser.add_argument('--data-root', default='/data/ct_rate/valid/')
     parser.add_argument('--input-file', default='../../data/ct_rate/metafiles/valid_labels.csv', type=str)
     parser.add_argument('--process-cfg', nargs='+', default=["-1150", "350", "crop"])
     parser.add_argument('--zeroshot-template', default='volume', type=str)

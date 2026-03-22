@@ -38,8 +38,8 @@ def get_args_parser():
     parser.add_argument('--resume', default='/pretrained/chestct_clip_vit_base_slice_scan_token2744.pt', type=str)
 
     parser.add_argument('--data-root', default='/data/rad_chestct/')
-    parser.add_argument('--input-file', '--zeroshot-rad-chestct', dest='input_file', default='../../data/rad_chestct/files/rad_chestct_labels.csv', type=str)
-    parser.add_argument('--process-cfg', '--input-info', dest='process_cfg', nargs='+', default=['-1150', '350', 'crop'])
+    parser.add_argument('--input-file', default='../../data/rad_chestct/files/rad_chestct_labels.csv', type=str)
+    parser.add_argument('--process-cfg', nargs='+', default=['-1150', '350', 'crop'])
     parser.add_argument('--zeroshot-template', default='volume', type=str)
     parser.add_argument('--workers', default=4, type=int)
     parser.add_argument('--save', default='', type=str)

@@ -479,10 +479,16 @@ def parse_args(args):
         help="Benchmark",
     )
     parser.add_argument(
-        "--data-root",
+        "--train-file",
         type=str,
         default=None,
-        help="Path to data.",
+        help="Train file.",
+    )
+    parser.add_argument(
+        "--valid-file",
+        type=str,
+        default=None,
+        help="Valid file.",
     )
     parser.add_argument(
         "--ct-rate",
@@ -532,6 +538,12 @@ def parse_args(args):
         nargs="+",
         default=["-1150", "350", "crop"],
         help="Process information for CT images: [HU min, HU max, batch construction].",
+    )
+    parser.add_argument(
+        "--text-process-cfg",
+        type=str,
+        default="report",
+        help="Process information for text supervision."
     )
     parser.add_argument(
         "--num-scans",
