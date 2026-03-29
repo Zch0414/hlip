@@ -505,12 +505,6 @@ def parse_args(args):
         help="Data for RAD-ChestCT zero-shot evaluation, {'data_root': '...', 'input_file': '...'}"
     )
     parser.add_argument(
-        "--zeroshot-template",
-        type=str,
-        default='organ',
-        help="Zero-shot template for CT-RATE and RAD-ChestCT, with organ prompt template or volume prompt template."
-    )
-    parser.add_argument(
         "--finetune",
         default=None,
         type=str,

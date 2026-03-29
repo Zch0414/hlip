@@ -26,7 +26,7 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from huggingface_hub import snapshot_download
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_pubbrain5 import CLASSNAMES, TEMPLATES, PROMPTS
+from hlip.zeroshot_metadata_pubbrain5 import HEADERS, CLASSNAMES, TEMPLATES
 
 
 # arguments
@@ -65,7 +65,7 @@ class PubBrain5Dataset(Dataset):
         df = pd.read_csv(input_file)
         for _, row in df.iterrows():
             if len(os.listdir(os.path.join(self.data_root, row['study']))):
-                self.studies.append((row['study'] , row[CLASSNAMES].astype(int).tolist()))
+                self.studies.append((row['study'] , row[list(HEADERS)].astype(int).tolist()))
 
         # debug
         # self.studies = self.studies[: 32]
@@ -123,7 +123,7 @@ def get_data(data_root, input_file, workers, distributed):
 
 # metric
 def compute_pubbrain5_metrics(ground_truth, prediction):
-    assert prediction.shape == ground_truth.shape and prediction.shape[1] == 5, "Expected [N, 5] inputs."
+    assert prediction.shape == ground_truth.shape and prediction.shape[1] == len(HEADERS), f"Expected [N, {len(HEADERS)}] inputs."
     results = {}
 
     # ---------------- anomaly ----------------
@@ -251,8 +251,8 @@ def run(model, tokenizer, dataloader, args):
         classifier = build_zero_shot_classifier(
             model,
             tokenizer=tokenizer,
-            classnames=PROMPTS['prompt'],
-            templates=TEMPLATES['template'],
+            classnames=CLASSNAMES,
+            templates=TEMPLATES,
             num_classes_per_batch=None, # all
             device=device,
             use_tqdm=False,

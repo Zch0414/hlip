@@ -152,3 +152,6 @@ hf_staging/
 COMMAND.md
 ct.csv
 mri.csv
+*.sbat
+.codex
+mr_rate_train.json

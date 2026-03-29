@@ -41,34 +41,7 @@ make install-training
 ```
 
 ### Models
-| Data | Objective | Patch Size | Attention | Model |
-| :--------: | :--------: | :--------: | :--------: | :--------: |
-| CT-RATE (20K) | CLIP | <code>8, 24, 24</code> | <code>slice</code> + <code>scan</code> | [ViT Base](https://drive.google.com/file/d/1muu7L9H3KaL3nq3fNtN8kKF1eDK3R5Z4/view?usp=drive_link) |
-| BrainMRI (220K) | CLIP |  <code>8, 16, 16</code> |<code>scan</code> + <code>study</code> | [ViT Base](https://drive.google.com/file/d/12BwJvd6IEZynXM8jkled0ND7t11iuySj/view?usp=drive_link) |
-| HeadCT (240K) | CLIP | <code>8, 16, 16</code> | <code>scan</code> + <code>study</code> | [ViT Base](https://drive.google.com/file/d/1rfoz-kzF0iwaMQ-4MuR7F4NlTjtPIZa7/view?usp=drive_link) |
-
-Future models will be released on HuggingFace and announced in the **Updates** section.
-
-### Demo
-Chest CT: an example from the external Rad-ChestCT dataset.
-```bash
-python inference_radchestct.py \
-  --model clip_vit_base_slice_scan_token2744 \
-  --use-cxr-bert \
-  --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
-  --data ../../docs/tst32751/tst32751.pt
-```
-
-Brain MRI: an example from the external BraTS23 dataset.
-```bash
-python inference_pubbrain5.py \
-  --model clip_vit_base_scan_study_token1176 \
-  --resume /path/to/clip_vit_base_scan_study_token1176.pt \
-  --patch-size 8 16 16 \
-  --num-slices 48 \
-  --data ../../docs/BraTS-GLI-00459-000
-```
-Visualizing the activation with <code>--interpret</code>. Increasing <code>--num-slcies</code> for better visualization quality.
+Models are released on HuggingFace and announced in the **Updates** section.
 
 ### Evaluation
 CT-RATE
@@ -77,8 +50,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_ctrate.py \
   --model clip_vit_base_slice_scan_token2744 \
   --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
   --data-root /data/ct_rate/valid/ \
-  --input-file ../../data/ct_rate/metafiles/valid_labels.csv \
-  --zeroshot-template volume
+  --input-file ../../data/ct_rate/valid_labels.csv \
 ```
 
 Rad-ChestCT
@@ -87,8 +59,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_radchestct.
   --model clip_vit_base_slice_scan_token2744 \
   --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
   --data-root /data/rad_chestct/ \
-  --input-file ../../data/rad_chestct/files/rad_chestct_labels.csv \
-  --zeroshot-template volume
+  --input-file ../../data/rad_chestct/rad_chestct_labels.csv \
 ```
 
 Pub-Brain-5
@@ -110,21 +81,19 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_rsna.py \
 ```
 
 ### Training
-
-Below, we provide a training script to reproduce our results on CT-RATE using the original reports as supervision. Training for 20 epochs takes approximately 6 hours on a single node with 4 A40 GPUs.
+Training script on CT-RATE using the itemized report as supervision. Training for 20 epochs takes approximately 6 hours on a single node with 4 A40 GPUs.
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --benchmark-type ct-rate \
   --logs-dir /path/to/logs/ \
   --zeroshot-frequency 1 \
-  --zeroshot-template volume \
   --save-frequency 1 \
   --train-data /path/to/ct_rate/train/ \
-  --train-file ../../data/ct_rate/files/raw_annotation.json \
+  --train-file ../../data/ct_rate/ct_rate_train.json \
   --image-process-cfg -1150 350 crop \
-  --text-process-cfg report \
-  --ct-rate data_root='"/path/to/ct_rate/valid/"' input_file='"../../data/ct_rate/metafiles/valid_labels.csv"' \
-  --rad-chestct data_root='"/path/to/rad_chestct/"' input_file='"../../data/rad_chestct/files/rad_chestct_labels.csv"' \
+  --text-process-cfg "report" \
+  --ct-rate data_root='"/path/to/ct_rate/valid/"' input_file='"../../data/ct_rate/ct_rate_valid.csv"' \
+  --rad-chestct data_root='"/path/to/rad_chestct/"' input_file='"../../data/rad_chestct/rad_chestct_labels.csv"' \
   --report-to wandb \
   --wandb-project-name hlip \
   --warmup 47 \
@@ -142,6 +111,37 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --model clip_vit_base_slice_scan_token2744 \
   --use-cxr-bert \
   --lock-text \
+  --dist-url "env://localhost:29500"
+```
+
+Training script on CT-RATE using the Qwen summarized report as supervision. Training for 40 epochs takes approximately 12 hours on a single node with 8 L40 GPUs.
+```bash
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
+  --benchmark-type mr-rate \
+  --logs-dir /path/to/logs/ \
+  --zeroshot-frequency 1 \
+  --save-frequency 1 \
+  --train-data /path/to/mr_rate/ \
+  --train-file ../../data/mr_rate/train.json \
+  --valid-data /path/to/mr_rate/ \
+  --valid-file ../../data/mr_rate/valid.json \
+  --num-scans 6 \
+  --text-process-cfg "impressions and findings" \
+  --report-to wandb \
+  --wandb-project-name hlip \
+  --warmup 2400 \
+  --batch-size 16 \
+  --accum-batch 2 \
+  --lr=2e-4 \
+  --wd=0.2 \
+  --force-patch-dropout 0.0 \
+  --epochs=40 \
+  --precision amp \
+  --workers 8 \
+  --local-loss \
+  --gather-with-grad \
+  --grad-checkpointing \
+  --model clip_vit_base_scan_study_dualdinotxt1568 \
   --dist-url "env://localhost:29500"
 ```
 

@@ -23,25 +23,19 @@ class StudyInfo(object):
     def get_impressions(self, shuffle):
         if shuffle:
             random.shuffle(self.impressions)
-        return 'This MRI study shows:' + ' '.join(self.impressions)
+        return 'This study shows:' + ' '.join(self.impressions)
     
     def get_sentence(self, shuffle):
         if shuffle:
             sentence = random.choice(self.impressions)
         else:
             sentence = self.impressions[0]
-        return f'This MRI study shows: {sentence}'
+        return f'This study shows: {sentence}'
     
     def get_findings(self, shuffle):
         if shuffle:
             random.shuffle(self.findings)
-        return 'This MRI study looks like:' + ' '.join(self.findings)
-    
-    def get_report(self, shuffle):
-        if shuffle:
-            random.shuffle(self.findings)
-            random.shuffle(self.impressions)
-        return 'This MRI study shows:' + ' '.join(self.impressions) + 'This MRI study looks like:' + ' '.join(self.findings)
+        return 'This study looks like:' + ' '.join(self.findings)
 
 
 class StudyDataset(Dataset):
@@ -72,9 +66,6 @@ class StudyDataset(Dataset):
     def __getitem__(self, idx):
         study = self.studies[idx]
 
-        # get report
-        report = self.tokenizer([str(study.get_report(shuffle=self.is_train))])[0]
-
         # get image
         scans = study.get_scans(shuffle=self.is_train)
         if self.is_train:
@@ -90,24 +81,15 @@ class StudyDataset(Dataset):
             image.append(img)
 
         # get text
-        if self.text_process_cfg == 'report':
-            sentence = study.get_report(shuffle=self.is_train)
-            report = sentence
-        elif self.text_process_cfg == 'impressions':
+        if self.text_process_cfg == 'impressions':
             sentence = study.get_impressions(shuffle=self.is_train)
             report = sentence
-        elif self.text_process_cfg == 'sentence':
-            sentence = study.get_sentence(shuffle=self.is_train)
-            report = sentence
-        elif self.text_process_cfg == 'impressions and findings':
-            sentence = study.get_impressions(shuffle=self.is_train)
-            report = study.get_findings(shuffle=self.is_train)
-        elif self.text_process_cfg == 'sentence and impressions':
-            sentence = study.get_sentence(shuffle=self.is_train)
-            report = study.get_impressions(shuffle=self.is_train)
         elif self.text_process_cfg == 'sentence and findings':
             sentence = study.get_sentence(shuffle=self.is_train)
-            report = study.get_findings(shuffle=self.is_train)
+            report = study.get_findings(shuffle=False)
+        elif self.text_process_cfg == 'impressions and findings':
+            sentence = study.get_impressions(shuffle=self.is_train)
+            report = study.get_findings(shuffle=False)
 
         sentence = self.tokenizer([sentence])[0]
         report = self.tokenizer([report])[0]
@@ -120,6 +102,7 @@ def get_dataset(args, tokenizer, is_train):
         data_root=args.train_data if is_train else args.valid_data,
         input_file=args.train_file if is_train else args.valid_file,
         text_process_cfg=args.text_process_cfg,
+        num_scans=args.num_scans,
         tokenizer=tokenizer,
         is_train=is_train
     )
@@ -146,7 +129,7 @@ def get_dataset(args, tokenizer, is_train):
 def get_data(args, tokenizer=None):
     data = {}
     if args.train_data:
-        data["train"] = get_dataset(args, None, is_train=True, tokenizer=tokenizer)
+        data["train"] = get_dataset(args, tokenizer=tokenizer, is_train=True)
     if args.valid_data:
-        data["valid"] = get_dataset(args, None, is_train=False, tokenizer=tokenizer)
+        data["valid"] = get_dataset(args, tokenizer=tokenizer, is_train=False)
     return data

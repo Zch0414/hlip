@@ -435,7 +435,7 @@ def main(args):
     tokenizer = get_tokenizer(args.model, cache_dir=args.cache_dir, trust_remote_code=True)
     if args.benchmark_type == 'ct-rate':
         from hlip_train.data_ct_rate import get_data
-    elif args.wandb_project_name == 'mr-rate':
+    elif args.benchmark_type == 'mr-rate':
         from hlip_train.data_mr_rate import get_data
     else:
         raise NotImplementedError

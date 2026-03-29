@@ -26,7 +26,7 @@ from torchvision.transforms import Normalize
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_radchestct import CLASSNAMES, ORGANS, TEMPLATES, PROMPTS
+from hlip.zeroshot_metadata_radchestct import CLASSNAMES, TEMPLATES
 
 
 def get_args_parser():
@@ -40,7 +40,6 @@ def get_args_parser():
     parser.add_argument('--data-root', default='/data/rad_chestct/')
     parser.add_argument('--input-file', default='../../data/rad_chestct/files/rad_chestct_labels.csv', type=str)
     parser.add_argument('--process-cfg', nargs='+', default=['-1150', '350', 'crop'])
-    parser.add_argument('--zeroshot-template', default='volume', type=str)
     parser.add_argument('--workers', default=4, type=int)
     parser.add_argument('--save', default='', type=str)
 
@@ -68,7 +67,7 @@ class RadChestCTDataset(Dataset):
         df = pd.read_csv(input_file)
         for _, row in df.iterrows():
             recon = row['NoteAcc_DEID']
-            self.cts.append((os.path.join(root, recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
+            self.cts.append((os.path.join(root, recon + '.pt'), row[list(CLASSNAMES)].astype(int).tolist()))
 
         self.process_cfg = (float(process_cfg[0]), float(process_cfg[1]), str(process_cfg[2]))
         self.normalizer = Normalize(torch.as_tensor(IMAGENET_DEFAULT_MEAN).mean(), torch.as_tensor(IMAGENET_DEFAULT_STD).mean())
@@ -185,38 +184,20 @@ def find_threshold(y_true, y_score):
 
 def compute_radchestct_metrics(ground_truth, prediction):
     assert prediction.shape == ground_truth.shape and prediction.shape[1] == len(CLASSNAMES), (
-        f'Expected [N, {len(CLASSNAMES)}] inputs.'
+        f"Expected [N, {len(CLASSNAMES)}] inputs."
     )
 
     ground_truth = ground_truth.cpu()
     prediction = prediction.cpu()
-
-    calcification_sources = {
-        'Coronary artery wall calcification',
-        'Arterial wall calcification',
-    }
-    coronary_idx = CLASSNAMES.index('Coronary artery wall calcification')
-    arterial_idx = CLASSNAMES.index('Arterial wall calcification')
-    eval_classnames = [key for key in CLASSNAMES if key not in calcification_sources] + ['Calcification']
-
     results = {}
     aucs, accs, f1ws, precisions, recalls = [], [], [], [], []
 
-    for key in eval_classnames:
-        if key == 'Calcification':
-            y_true = ground_truth[:, coronary_idx].to(torch.int64).numpy()
-            coronary_score = prediction[:, coronary_idx].to(torch.float32).numpy()
-            arterial_score = prediction[:, arterial_idx].to(torch.float32).numpy()
-            y_score = np.where(
-                (coronary_score > 0.5) | (arterial_score > 0.5),
-                np.maximum(coronary_score, arterial_score),
-                np.minimum(coronary_score, arterial_score),
-            )
-        else:
-            idx = CLASSNAMES.index(key)
-            y_true = ground_truth[:, idx].to(torch.int64).numpy()
-            y_score = prediction[:, idx].to(torch.float32).numpy()
+    for idx, key in enumerate(CLASSNAMES):
+        y_true = ground_truth[:, idx].to(torch.int64).numpy()
+        y_score = prediction[:, idx].to(torch.float32).numpy()
 
+        # `find_threshold` assumes both classes are present. Fall back to the
+        # default binary cutoff when the eval slice is degenerate.
         threshold = find_threshold(y_true, y_score)
         y_pred = (y_score > threshold).astype(int)
 
@@ -253,48 +234,34 @@ def compute_radchestct_metrics(ground_truth, prediction):
 
 # run
 def run(model, tokenizer, dataloader, args):
-    if args.zeroshot_template != 'organ':
-        PROMPTS['Lung nodule'] = ('Not lung nodule', 'Lung nodule')
-        PROMPTS['Lung opacity'] = ('Not lung opacity', 'Lung opacity')
-
     device = torch.device(args.device)
     autocast = get_autocast('amp', device_type=device.type)
     input_dtype = get_input_dtype('amp')
 
+    # build classifier
     with autocast():
-        classifier = {}
-        for key in CLASSNAMES:
-            classifier[key] = build_zero_shot_classifier(
-                model,
-                tokenizer=tokenizer,
-                classnames=PROMPTS[key],
-                templates=TEMPLATES[ORGANS[key]] if args.zeroshot_template == 'organ' else TEMPLATES[args.zeroshot_template],
-                num_classes_per_batch=None,
-                device=device,
-                use_tqdm=False,
-            )
+        classifier = build_zero_shot_classifier(
+            model,
+            tokenizer=tokenizer,
+            classnames=CLASSNAMES,
+            templates=TEMPLATES,
+            num_classes_per_batch=None, # all
+            device=device,
+            use_tqdm=False,
+        )
 
     prediction = []
     ground_truth = []
     with torch.inference_mode():
-        for batch in tqdm(dataloader, total=len(dataloader), disable=not is_master(args)):
+        for batch in tqdm(dataloader, total=len(dataloader), disable=getattr(args, 'rank', 0) != 0):
             image = batch['image'].to(device=device, dtype=input_dtype, non_blocking=True)
             ground_truth.append(batch['target'].cpu())
 
             with autocast():
                 model_out = model(image=image)
-                image_features = model_out['image_features']
-                if image_features.ndim == 3:
-                    image_features = image_features[:, 0, :]
-                logit_scale = model_out['logit_scale']
-
-                batch_prediction = []
-                for key in CLASSNAMES:
-                    logits_per_image = logit_scale * image_features @ classifier[key]
-                    probs_per_image = logits_per_image.softmax(dim=-1)
-                    batch_prediction.append(probs_per_image[:, 1].detach().cpu())
-
-            prediction.append(torch.stack(batch_prediction, dim=1))
+                image_features = model_out['image_features'][:, 0, :]
+                logits_per_image = image_features @ classifier
+                prediction.append(logits_per_image.detach().cpu())
 
     return torch.cat(ground_truth, dim=0), torch.cat(prediction, dim=0)
 

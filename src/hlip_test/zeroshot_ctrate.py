@@ -26,7 +26,7 @@ from torchvision.transforms import Normalize
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_ctrate import CLASSNAMES, ORGANS, TEMPLATES, PROMPTS
+from hlip.zeroshot_metadata_ctrate import CLASSNAMES, TEMPLATES
 
 
 def get_args_parser():
@@ -40,7 +40,6 @@ def get_args_parser():
     parser.add_argument('--data-root', default='/data/ct_rate/valid/')
     parser.add_argument('--input-file', default='../../data/ct_rate/metafiles/valid_labels.csv', type=str)
     parser.add_argument('--process-cfg', nargs='+', default=["-1150", "350", "crop"])
-    parser.add_argument('--zeroshot-template', default='volume', type=str)
     parser.add_argument('--workers', default=4, type=int)
     parser.add_argument('--save', default='', type=str)
 
@@ -69,7 +68,7 @@ class CTRATEDataset(Dataset):
         for _, row in df.iterrows():
             recon = row['VolumeName']
             recon = recon.rsplit('.', 2)[0]
-            self.cts.append((os.path.join(root, recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[CLASSNAMES].astype(int).tolist()))
+            self.cts.append((os.path.join(root, recon.rsplit('_', 2)[0], recon.rsplit('_', 1)[0], recon + '.pt'), row[list(CLASSNAMES)].astype(int).tolist()))
         
         self.process_cfg = (float(process_cfg[0]), float(process_cfg[1]), str(process_cfg[2]))
         self.normalizer = Normalize(torch.as_tensor(IMAGENET_DEFAULT_MEAN).mean(), torch.as_tensor(IMAGENET_DEFAULT_STD).mean())
@@ -236,31 +235,21 @@ def compute_ctrate_metrics(ground_truth, prediction):
 
 
 def run(model, tokenizer, dataloader, args):
-    if args.zeroshot_template != 'organ':
-        PROMPTS["Lung nodule"] = ("Not lung nodule", "Lung nodule")
-        PROMPTS["Lung opacity"] = ("Not lung opacity", "Lung opacity")
-    
     device = torch.device(args.device)
     autocast = get_autocast('amp', device_type=device.type)
     input_dtype = get_input_dtype('amp')
 
     # build classifier
     with autocast():
-        classifier = {}
-        for key in CLASSNAMES:
-            classifier.update(
-                {
-                    key: build_zero_shot_classifier(
-                            model,
-                            tokenizer=tokenizer,
-                            classnames=PROMPTS[key],
-                            templates=TEMPLATES[ORGANS[key]] if args.zeroshot_template == 'organ' else TEMPLATES[args.zeroshot_template],
-                            num_classes_per_batch=None, # all
-                            device=device,
-                            use_tqdm=False,
-                        )
-                }
-            )
+        classifier = build_zero_shot_classifier(
+            model,
+            tokenizer=tokenizer,
+            classnames=CLASSNAMES,
+            templates=TEMPLATES,
+            num_classes_per_batch=None, # all
+            device=device,
+            use_tqdm=False,
+        )
 
     prediction = []
     ground_truth = []
@@ -272,15 +261,8 @@ def run(model, tokenizer, dataloader, args):
             with autocast():
                 model_out = model(image=image)
                 image_features = model_out['image_features'][:, 0, :]
-                logit_scale = model_out['logit_scale']
-
-                batch_prediction = []
-                for key in CLASSNAMES:
-                    logits_per_image = logit_scale * image_features @ classifier[key]
-                    probs_per_image = logits_per_image.softmax(dim=-1)
-                    batch_prediction.append(probs_per_image[:, 1].detach().cpu())
-
-                prediction.append(torch.stack(batch_prediction, dim=1))
+                logits_per_image = image_features @ classifier
+                prediction.append(logits_per_image.detach().cpu())
 
     return torch.cat(ground_truth, dim=0), torch.cat(prediction, dim=0)
 

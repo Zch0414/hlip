@@ -26,7 +26,7 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from huggingface_hub import snapshot_download
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_rsna import CLASSNAMES, TEMPLATES, PROMPTS
+from hlip.zeroshot_metadata_rsna import HEADERS, CLASSNAMES, TEMPLATES
 
 
 # arguments
@@ -38,6 +38,7 @@ def get_args_parser():
     
     parser.add_argument('--data-root', default='/path/to/rsna')
     parser.add_argument('--input-file', default='../../data/rsna.csv')
+    parser.add_argument('--zeroshot-format', default='internal', type=str)
     parser.add_argument('--workers', default=8, type=int)
     parser.add_argument('--save', default='', type=str)
 
@@ -66,7 +67,7 @@ class RSNADataset(Dataset):
         for _, row in df.iterrows():
             for uid in os.listdir(os.path.join(self.data_root, f"RSNA_{row['study']}")):
                 if len(os.listdir(os.path.join(self.data_root, f"RSNA_{row['study']}", uid))):
-                    self.studies.append((f"RSNA_{row['study']}/{uid}", row[CLASSNAMES].astype(int).tolist()))
+                    self.studies.append((f"RSNA_{row['study']}/{uid}", row[list(HEADERS)].astype(int).tolist()))
 
         # debug
         # self.studies = self.studies[: 32]
@@ -110,7 +111,7 @@ def get_data(data_root, input_file, workers, distributed):
 
 # metric
 def compute_rsna_metrics(ground_truth, prediction):
-    assert prediction.shape == ground_truth.shape and prediction.shape[1] == 5, "Expected [N, 5] inputs."
+    assert prediction.shape == ground_truth.shape and prediction.shape[1] == len(HEADERS), f"Expected [N, {len(HEADERS)}] inputs."
 
     results = {}
     for i, name in enumerate(["Intracranial hemorrhage", "Intraparenchymal hemorrhage", "Intraventricular hemorrhage", "Subarachnoid hemorrhage", "Subdural hemorrhage"]):
@@ -139,8 +140,8 @@ def run(model, tokenizer, dataloader, args):
         classifier = build_zero_shot_classifier(
             model,
             tokenizer=tokenizer,
-            classnames=PROMPTS['prompt'],
-            templates=TEMPLATES['template'],
+            classnames=CLASSNAMES,
+            templates=TEMPLATES,
             num_classes_per_batch=None, # all
             device=device,
             use_tqdm=False,

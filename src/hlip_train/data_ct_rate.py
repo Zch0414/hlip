@@ -33,31 +33,12 @@ class StudyInfo(object):
     def get_report(self, shuffle):
         if shuffle:
             random.shuffle(self.reports)
-        return ' '.join(self.reports)
+        return 'This study shows:' + ' '.join(self.reports)
     
     def get_sentence(self, shuffle):
         if shuffle:
-            return random.choice(self.reports)
-        return self.reports[0]
-
-    def get_impressions_and_findings(self, shuffle):
-        if shuffle:
-            random.shuffle(self.reports)
-
-        impressions, findings = [], []
-        pattern = r"\b(The\s+(.+?)\s+looks like:)"
-
-        for report in self.reports:
-            match = re.search(pattern, report)
-            if match is None:
-                impressions.append(report)
-                findings.append(report)
-                continue
-            
-            impressions.append(report[:match.start()].strip())
-            findings.append(report[match.start():].strip())
-        
-        return ' '.join(impressions), ' '.join(findings)
+            return f'This study shows: {random.choice(self.reports)}'
+        return f'This study shows: {self.reports[0]}'
 
 
 class StudyDataset(Dataset):
@@ -148,8 +129,6 @@ class StudyDataset(Dataset):
         elif self.text_process_cfg == 'sentence':
             sentence = study.get_sentence(shuffle=self.is_train)
             report = sentence
-        elif self.text_process_cfg == 'impressions and findings':
-            sentence, report = study.get_impressions_and_findings(shuffle=self.is_train)
         elif self.text_process_cfg == 'sentence and report':
             sentence = study.get_sentence(shuffle=self.is_train)
             report = study.get_report(shuffle=self.is_train)
