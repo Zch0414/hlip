@@ -18,6 +18,7 @@
 Directly leveraging uncurated clinical studies enables scalable language-image pre-training in 3D medical imaging, as the scale is no longer constrained by the manual effort required from clinicians to select a single representative scan or slice from each study. This paradigm could be more effective when equipped with a hierarchical attention mechanism inspired by the natural structure of the data: slice, scan, and study. We name this framework **H**ierarchical attention for **L**anguage-**I**mage **P**re-training (**HLIP**). For real-world clinical use, HLIP can be applied to studies containing either a single scan (e.g., chest CT) or multiple scans (e.g., brain MRI).
 
 ## Updates
+- **(2026-03)** We are currently updating the overall framework of this repository. Please refer to [v1.0](https://github.com/zch0414/hlip/tree/v1.0) to reproduce the results reported in the original paper.
 - **(2026-03)** Check out our new [paper](https://arxiv.org/abs/2512.11141), accepted at CVPR 2026, which introduces a new strategy, beyond the dual-loss approach presented in the HLIP blog, for handling itemized text supervision in language-image pre-training. The code and model weights are available [here](https://github.com/MLNeurosurg/ItemizedCLIP).
 - **(2026-02)** Assets in **2025-11 (departured)** have been finalized and updated. We apologize for any inconvenience to researchers actively using this repository. This should be our last incremental update to HLIP. We have released four HLIP variants in the Hugging Face collection: [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/collections/zch0414/hlip). The model released in **2025-11** is also included in this collection and is listed as [hlip-2025_10_08](https://huggingface.co/zch0414/hlip-2025_10_08). Technical details are provided in this [blog](https://zch0414.github.io/hlip-ablation/), and the implementation is based on this [code branch](https://github.com/Zch0414/hlip/tree/hlip-ablation). 
 - **(2026-02)** HLIP is accepted by TMLR!
@@ -91,7 +92,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --train-data /path/to/ct_rate/train/ \
   --train-file ../../data/ct_rate/ct_rate_train.json \
   --image-process-cfg -1150 350 crop \
-  --text-process-cfg "report" \
+  --text-process-cfg "sentence and report" \
   --ct-rate data_root='"/path/to/ct_rate/valid/"' input_file='"../../data/ct_rate/ct_rate_valid.csv"' \
   --rad-chestct data_root='"/path/to/rad_chestct/"' input_file='"../../data/rad_chestct/rad_chestct_labels.csv"' \
   --report-to wandb \
@@ -108,13 +109,13 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --local-loss \
   --gather-with-grad \
   --grad-checkpointing \
-  --model clip_vit_base_slice_scan_token2744 \
+  --model clip_vit_base_slice_scan_dualdinotxt2744 \
   --use-cxr-bert \
   --lock-text \
   --dist-url "env://localhost:29500"
 ```
 
-Training script on CT-RATE using the Qwen summarized report as supervision. Training for 40 epochs takes approximately 12 hours on a single node with 8 L40 GPUs.
+Training script on MR-RATE using the Qwen summarized report as supervision. Training for 40 epochs takes approximately 20 hours on a single node with 8 L40 GPUs.
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --benchmark-type mr-rate \
