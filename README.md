@@ -18,7 +18,7 @@
 Directly leveraging uncurated clinical studies enables scalable language-image pre-training in 3D medical imaging, as the scale is no longer constrained by the manual effort required from clinicians to select a single representative scan or slice from each study. This paradigm could be more effective when equipped with a hierarchical attention mechanism inspired by the natural structure of the data: slice, scan, and study. We name this framework **H**ierarchical attention for **L**anguage-**I**mage **P**re-training (**HLIP**). For real-world clinical use, HLIP can be applied to studies containing either a single scan (e.g., chest CT) or multiple scans (e.g., brain MRI).
 
 ## Updates
-- **(2026-04)**:
+- **(2026-04)**
   - We have removed all data processing instructions. We currently support only [itemized](https://github.com/MLNeurosurg/ItemizedCLIP/blob/main/Radiology_Tasks/src/open_ct_rate/itemized.json) supervision for training on the CT-RATE dataset. We have also updated the prompt templates used in all zero-shot evaluations. Therefore, please refer to [v1.0](https://github.com/zch0414/hlip/tree/v1.0) for data processing and to reproduce the results reported in the original paper.
   - We support distributed evaluation on all datasets, including CT-RATE, Rad-ChestCT, MR-RATE, Pub-Brain-5/Pub-Brain-5-GT, and RSNA.
   - We train <code>vit_base_slice_scan_dualdinotxt2744</code> on CT-RATE. The resulting model achieves an AUC of 79.8 on the internal CT-RATE evaluation and 71.8 on the external Rad-ChestCT evaluation. The training command is provided in the Training section.
