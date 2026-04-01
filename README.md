@@ -18,7 +18,12 @@
 Directly leveraging uncurated clinical studies enables scalable language-image pre-training in 3D medical imaging, as the scale is no longer constrained by the manual effort required from clinicians to select a single representative scan or slice from each study. This paradigm could be more effective when equipped with a hierarchical attention mechanism inspired by the natural structure of the data: slice, scan, and study. We name this framework **H**ierarchical attention for **L**anguage-**I**mage **P**re-training (**HLIP**). For real-world clinical use, HLIP can be applied to studies containing either a single scan (e.g., chest CT) or multiple scans (e.g., brain MRI).
 
 ## Updates
-- **(2026-03)** We are currently updating the overall framework of this repository. Please refer to [v1.0](https://github.com/zch0414/hlip/tree/v1.0) to reproduce the results reported in the original paper.
+- **(2026-04)**:
+  - We have removed all data processing instructions. For CT-RATE, we currently support only [itemized](https://github.com/MLNeurosurg/ItemizedCLIP/blob/main/Radiology_Tasks/src/open_ct_rate/itemized.json) supervision for training. We have also updated the prompt templates used in all zero-shot evaluations. Therefore, please refer to [v1.0](https://github.com/zch0414/hlip/tree/v1.0) for data processing and to reproduce the results reported in the original paper.
+  - We support distributed evaluation on all datasets, including CT-RATE, Rad-ChestCT, MR-RATE, Pub-Brain-5/Pub-Brain-5-GT, and RSNA.
+  - We train <code>vit_base_slice_scan_dualdinotxt2744</code> on CT-RATE. The resulting model achieves an AUC of 79.8 on the internal CT-RATE evaluation and 71.8 on the external Rad-ChestCT evaluation. The training command is provided in the Training section.
+  - We train <code>vit_base_scan_study_dualdinotxt1568</code> on MR-RATE using its provided report supervision. The resulting model achieves an AUC of 76.4 on the internal MR-RATE test split, and a balanced ACC of 89.1, 46.7, and 44.6 on the Pub-Brain-5 dataset, respectively. The training command is provided in the Training section.
+  - We test our <code>vit_large_slice_scan_study_dualdinotxt1568</code> [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/zch0414/clip-vit_base-slice_scan_study-dualdinotxt1568) on MR-RATE test split and achieve an AUC of 80.3. This model achieves a balanced ACC of 91.5, 57.1, and 64.7 on the Pub-Brain-5 dataset, respectively.
 - **(2026-03)** Check out our new [paper](https://arxiv.org/abs/2512.11141), accepted at CVPR 2026, which introduces a new strategy, beyond the dual-loss approach presented in the HLIP blog, for handling itemized text supervision in language-image pre-training. The code and model weights are available [here](https://github.com/MLNeurosurg/ItemizedCLIP).
 - **(2026-02)** Assets in **2025-11 (departured)** have been finalized and updated. We apologize for any inconvenience to researchers actively using this repository. This should be our last incremental update to HLIP. We have released four HLIP variants in the Hugging Face collection: [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/collections/zch0414/hlip). The model released in **2025-11** is also included in this collection and is listed as [hlip-2025_10_08](https://huggingface.co/zch0414/hlip-2025_10_08). Technical details are provided in this [blog](https://zch0414.github.io/hlip-ablation/), and the implementation is based on this [code branch](https://github.com/Zch0414/hlip/tree/hlip-ablation). 
 - **(2026-02)** HLIP is accepted by TMLR!
@@ -61,6 +66,15 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_radchestct.
   --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
   --data-root /data/rad_chestct/ \
   --input-file ../../data/rad_chestct/rad_chestct_labels.csv \
+```
+
+MR-RATE
+```bash
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_mrrate.py \
+  --model clip_vit_base_scan_study_token1176 \
+  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --data-root /data/mr_rate/ \
+  --input-file ../../data/mr_rate/mr_rate_test.csv
 ```
 
 Pub-Brain-5
@@ -115,7 +129,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --dist-url "env://localhost:29500"
 ```
 
-Training script on MR-RATE using the Qwen summarized report as supervision. Training for 40 epochs takes approximately 20 hours on a single node with 8 L40 GPUs.
+Training script on MR-RATE using the Qwen summarized report as supervision. Training for 40 epochs takes approximately 16 hours on a single node with 8 L40 GPUs.
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --benchmark-type mr-rate \
@@ -127,7 +141,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --valid-data /path/to/mr_rate/ \
   --valid-file ../../data/mr_rate/valid.json \
   --num-scans 6 \
-  --text-process-cfg "impressions and findings" \
+  --text-process-cfg "sentence and findings" \
   --report-to wandb \
   --wandb-project-name hlip \
   --warmup 2400 \
