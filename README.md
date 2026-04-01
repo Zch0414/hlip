@@ -96,7 +96,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_rsna.py \
 ```
 
 ### Training
-Training script on CT-RATE using the itemized report as supervision. Training for 20 epochs takes approximately 6 hours on a single node with 4 A40 GPUs.
+CT-RATE
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --benchmark-type ct-rate \
@@ -111,13 +111,13 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --rad-chestct data_root='"/path/to/rad_chestct/"' input_file='"../../data/rad_chestct/rad_chestct_labels.csv"' \
   --report-to wandb \
   --wandb-project-name hlip \
-  --warmup 47 \
+  --warmup 100 \
   --batch-size 32 \
   --accum-batch 4 \
-  --lr=8e-5 \
+  --lr=1e-4 \
   --wd=0.2 \
   --force-patch-dropout 0.0 \
-  --epochs=20 \
+  --epochs=30 \
   --precision amp \
   --workers 4 \
   --local-loss \
@@ -128,8 +128,10 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --lock-text \
   --dist-url "env://localhost:29500"
 ```
+Training for 30 epochs takes approximately 7.5 hours on a single node with 4 A40 GPUs. The best checkpoints come from approximately 15 epochs of training.
 
-Training script on MR-RATE using the Qwen summarized report as supervision. Training for 40 epochs takes approximately 16 hours on a single node with 8 L40 GPUs.
+
+MR-RATE
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --benchmark-type mr-rate \
@@ -159,6 +161,8 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
   --model clip_vit_base_scan_study_dualdinotxt1568 \
   --dist-url "env://localhost:29500"
 ```
+Training for 40 epochs takes approximately 16 hours on a single node with 8 L40 GPUs. We evaluate the checkpoint from epoch 30.
+
 
 Our training implementation is closely aligned with [open-clip](https://github.com/mlfoundations/open_clip/tree/main), allowing us to leverage features such as <code>patch dropout</code> and <code>siglip</code>.
 
