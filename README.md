@@ -24,7 +24,6 @@ Directly leveraging uncurated clinical studies enables scalable language-image p
   - We support **distributed evaluation** on all datasets, including CT-RATE, Rad-ChestCT, MR-RATE, Pub-Brain-5/Pub-Brain-5-GT, and RSNA.
   - We train <code>vit_base_slice_scan_dualdinotxt2744</code> on CT-RATE. The resulting model achieves an AUC of 79.8 on the internal CT-RATE evaluation and 71.8 on the external Rad-ChestCT evaluation. The training command is provided in the Training section.
   - If you need instructions for data processing or want to reproduce the results reported in the original paper, please refer to [v1.0](https://github.com/zch0414/hlip/tree/v1.0). We have removed all data processing instructions. We currently support only [itemized](https://github.com/MLNeurosurg/ItemizedCLIP/blob/main/Radiology_Tasks/src/open_ct_rate/itemized.json) supervision for training on the CT-RATE dataset. We have also updated the prompt templates used in all zero-shot evaluations. 
-- ~~**(2026-03)** We are currently updating the overall framework of this repository. Please refer to v1.0 to reproduce the results reported in the original paper.~~
 - **(2026-03)** Check out our new [paper](https://arxiv.org/abs/2512.11141), accepted at CVPR 2026. We introduce a new strategy, beyond the dual-loss approach presented in the HLIP blog, for handling itemized text supervision in language-image pre-training. The code and model weights are available [here](https://github.com/MLNeurosurg/ItemizedCLIP).
 - **(2026-02)** 
   - HLIP is accepted by TMLR!
