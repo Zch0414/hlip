@@ -96,6 +96,15 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_rsna.py \
   --input-file ../../data/rsna/rsna.csv
 ```
 
+CQ500
+```bash
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_cq500.py \
+  --model clip_vit_base_scan_study_token1176 \
+  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --data-root /data/cq500/ \
+  --input-file ../../data/cq500/cq500.csv
+```
+
 ### Training
 CT-RATE
 ```bash

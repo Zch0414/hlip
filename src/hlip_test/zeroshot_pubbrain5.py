@@ -37,7 +37,7 @@ def get_args_parser():
     parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., Zch0414/hlip-2025-10-08')
 
     parser.add_argument('--data-root', default='/path/to/pub_brain_5')
-    parser.add_argument('--input-file', default='../../data/pub_brain_5.csv')
+    parser.add_argument('--input-file', default='../../data/pub_brain_5/pub_brain_5.csv')
     parser.add_argument('--workers', default=8, type=int)
     parser.add_argument('--save', default='', type=str)
 

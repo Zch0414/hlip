@@ -23,6 +23,7 @@ from open_clip_train.precision import get_autocast
 from open_clip_train.distributed import is_master, init_distributed_device, all_gather_object
 
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+from huggingface_hub import snapshot_download
 
 from hlip import visual_encoder
 from hlip.zeroshot_metadata_mrrate import CLASSNAMES, TEMPLATES
@@ -33,9 +34,10 @@ def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)
     parser.add_argument('--model', default='model_name', type=str)
     parser.add_argument('--resume', default='/path/to/model.pt', type=str)
+    parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., Zch0414/hlip-2025-10-08')
     
     parser.add_argument('--data-root', default='/path/to/mr_rate')
-    parser.add_argument('--input-file', default='/path/to/mr_rate.csv')
+    parser.add_argument('--input-file', default='../../data/mr_rate/mr_rate_test.csv')
     parser.add_argument('--simple-template', default=False, action='store_true')
     parser.add_argument('--workers', default=8, type=int)
     parser.add_argument('--save', default='', type=str)
@@ -193,13 +195,21 @@ def main(args):
                 model_cfg = json.load(f)
             _MODEL_CONFIGS[_m] = model_cfg
     model, _, _ = create_model_and_transforms(args.model, device=args.device, precision='amp', output_dict=True)
-    checkpoint = pt_load(args.resume, map_location='cpu')
-    sd = checkpoint['state_dict']
-
-    # For internal code base
-    # sd = {k.replace('module.visual.trunk.series_posemb', 'module.visual.trunk.sequential_posemb'): v for k, v in sd.items()}
     
-    sd = {k[len('module.'):]: v for k, v in sd.items()}
+    # load checkpoint
+    if args.huggingface is not None:
+        local_dir = snapshot_download(repo_id=args.huggingface)
+        bin_path = Path(local_dir) / "pytorch_model.bin"
+        if not bin_path.is_file():
+            raise FileNotFoundError(f"Expected pytorch_model.bin in HF repo {args.huggingface}, but not found at {bin_path}")
+        state_dict = torch.load(bin_path, map_location="cpu")
+        sd = state_dict["state_dict"] if isinstance(state_dict, dict) and "state_dict" in state_dict else state_dict
+    else:
+        checkpoint = pt_load(args.resume, map_location='cpu')
+        sd = checkpoint['state_dict']
+        # sd = {k.replace('module.visual.trunk.series_posemb', 'module.visual.trunk.sequential_posemb'): v for k, v in sd.items()}
+        sd = {k[len('module.'):]: v for k, v in sd.items()}
+        
     model.load_state_dict(sd)
     tokenizer = get_tokenizer(args.model)
 
@@ -220,8 +230,12 @@ def main(args):
         
     model.eval()
     ground_truth, prediction = run(model, tokenizer, dataloader, args)
-    prediction = all_gather_object(args, prediction)
-    ground_truth = all_gather_object(args, ground_truth)
+    if args.distributed:
+        prediction = all_gather_object(args, prediction)
+        ground_truth = all_gather_object(args, ground_truth)
+    else:
+        prediction = [prediction]
+        ground_truth = [ground_truth]
 
     if is_master(args):
         prediction = torch.cat(prediction, dim=0)

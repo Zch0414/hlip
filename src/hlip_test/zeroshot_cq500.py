@@ -26,7 +26,7 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from huggingface_hub import snapshot_download
 
 from hlip import visual_encoder
-from hlip.zeroshot_metadata_rsna import HEADERS, CLASSNAMES, TEMPLATES
+from hlip.zeroshot_metadata_cq500 import HEADERS, CLASSNAMES, TEMPLATES
 
 
 # arguments
@@ -36,8 +36,8 @@ def get_args_parser():
     parser.add_argument('--resume', default='/pretrained/clip_vit_base_scan_study_token1176.pt', type=str)
     parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., Zch0414/hlip-2025-10-08')
     
-    parser.add_argument('--data-root', default='/path/to/rsna')
-    parser.add_argument('--input-file', default='../../data/rsna/rsna.csv')
+    parser.add_argument('--data-root', default='/path/to/cq500/')
+    parser.add_argument('--input-file', default='../../data/cq500/cq500.csv')
     parser.add_argument('--zeroshot-format', default='internal', type=str)
     parser.add_argument('--workers', default=8, type=int)
     parser.add_argument('--save', default='', type=str)
@@ -55,7 +55,7 @@ def random_seed(seed=42, rank=0):
 
 
 # data
-class RSNADataset(Dataset):
+class CQ500Dataset(Dataset):
     def __init__(
         self,
         data_root,
@@ -65,9 +65,7 @@ class RSNADataset(Dataset):
         self.studies = []
         df = pd.read_csv(input_file)
         for _, row in df.iterrows():
-            for uid in os.listdir(os.path.join(self.data_root, f"RSNA_{row['study']}")):
-                if len(os.listdir(os.path.join(self.data_root, f"RSNA_{row['study']}", uid))):
-                    self.studies.append((f"RSNA_{row['study']}/{uid}", row[list(HEADERS)].astype(int).tolist()))
+            self.studies.append((row['study'], row[list(HEADERS)].astype(int).tolist()))
 
         # debug
         # self.studies = self.studies[: 32]
@@ -81,21 +79,22 @@ class RSNADataset(Dataset):
         study, target = self.studies[idx]
 
         image = []
-        for scan in [os.path.join(self.data_root, study, p) for p in os.listdir(os.path.join(self.data_root, study))]:
-            # load in img
-            img = torch.load(scan, weights_only=True)                
-            img = img.float() / 255.0
+        for scan_directory in [os.path.join(self.data_root, study, p) for p in os.listdir(os.path.join(self.data_root, study))]:
+            for scan in [os.path.join(scan_directory, p) for p in os.listdir(scan_directory)]:
+                # load in img
+                img = torch.load(scan, weights_only=True)                
+                img = img.float() / 255.0
 
-            # normalize
-            img = self.normalizer(img[None, ...])
-            image.append(img) 
+                # normalize
+                img = self.normalizer(img[None, ...])
+                image.append(img) 
         
         # NOTE: convert image to torch.float16 by default
         return {'image': torch.stack(image, dim=0).to(dtype=torch.float16), 'target': torch.as_tensor(target, dtype=torch.long)}
     
 
 def get_data(data_root, input_file, workers, distributed):
-    dataset = RSNADataset(data_root, input_file)
+    dataset = CQ500Dataset(data_root, input_file)
     sampler = torch.utils.data.distributed.DistributedSampler(dataset) if distributed else None
     dataloader = DataLoader(
         dataset,
@@ -114,7 +113,7 @@ def compute_rsna_metrics(ground_truth, prediction):
     assert prediction.shape == ground_truth.shape and prediction.shape[1] == len(HEADERS), f"Expected [N, {len(HEADERS)}] inputs."
 
     results = {}
-    for i, name in enumerate(["Intracranial hemorrhage", "Intraparenchymal hemorrhage", "Intraventricular hemorrhage", "Subarachnoid hemorrhage", "Subdural hemorrhage"]):
+    for i, name in enumerate(CLASSNAMES):
         y_true, y_score = ground_truth[:, i], prediction[:, i]
         results[f"auc ({name})"] = float(
             roc_auc_score(y_true, y_score)
@@ -124,7 +123,7 @@ def compute_rsna_metrics(ground_truth, prediction):
         macro_auc = roc_auc_score(ground_truth, prediction, average="macro", multi_class="ovr")
     except ValueError:
         macro_auc = np.nan
-    results["auc (rsna)"] = float(macro_auc)
+    results["auc (cq500)"] = float(macro_auc)
 
     return results
 
