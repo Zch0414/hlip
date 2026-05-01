@@ -54,8 +54,8 @@ Models are released on HuggingFace and announced in the **Updates** section.
 CT-RATE
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_ctrate.py \
-  --model clip_vit_base_slice_scan_token2744 \
-  --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
+  --model clip_vit_base_slice_scan_dualdinotxt2744 \
+  --resume /path/to/clip_vit_base_slice_scan_dualdinotxt2744.pt \
   --data-root /data/ct_rate/valid/ \
   --input-file ../../data/ct_rate/valid_labels.csv \
 ```
@@ -63,8 +63,8 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_ctrate.py \
 Rad-ChestCT
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_radchestct.py \
-  --model clip_vit_base_slice_scan_token2744 \
-  --resume /path/to/clip_vit_base_slice_scan_token2744.pt \
+  --model clip_vit_base_slice_scan_dualdinotxt2744 \
+  --resume /path/to/clip_vit_base_slice_scan_dualdinotxt2744.pt \
   --data-root /data/rad_chestct/ \
   --input-file ../../data/rad_chestct/rad_chestct_labels.csv \
 ```
@@ -72,8 +72,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 zeroshot_radchestct.
 MR-RATE
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_mrrate.py \
-  --model clip_vit_base_scan_study_token1176 \
-  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --huggingface zch0414/clip-vit_large-scan_study-dualdinotxt1568 \
   --data-root /data/mr_rate/ \
   --input-file ../../data/mr_rate/mr_rate_test.csv
 ```
@@ -81,8 +80,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_mrrate.py \
 Pub-Brain-5
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_pubbrain5.py \
-  --model clip_vit_base_scan_study_token1176 \
-  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --huggingface zch0414/clip-vit_large-scan_study-dualdinotxt1568 \
   --data-root /data/pub_brain_5/ \
   --input-file ../../data/pub_brain_5/pub_brain_5.csv
 ```
@@ -90,8 +88,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_pubbrain5.p
 RSNA
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_rsna.py \
-  --model clip_vit_base_scan_study_token1176 \
-  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --huggingface zch0414/clip-vit_large-scan_study-dualdinotxt1568 \
   --data-root /data/rsna/ \
   --input-file ../../data/rsna/rsna.csv
 ```
@@ -99,8 +96,7 @@ torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_rsna.py \
 CQ500
 ```bash
 torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 zeroshot_cq500.py \
-  --model clip_vit_base_scan_study_token1176 \
-  --resume /path/to/vit_base_scan_study_token1176.pt \
+  --huggingface zch0414/clip-vit_large-scan_study-dualdinotxt1568 \
   --data-root /data/cq500/ \
   --input-file ../../data/cq500/cq500.csv
 ```
@@ -143,7 +139,7 @@ Training for 30 epochs takes approximately 7.5 hours on a single node with 4 A40
 
 MR-RATE
 ```bash
-torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 4 main.py \
+torchrun --rdzv_endpoint=localhost:29500 --nproc_per_node 8 main.py \
   --benchmark-type mr-rate \
   --logs-dir /path/to/logs/ \
   --zeroshot-frequency 1 \

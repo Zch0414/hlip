@@ -32,9 +32,9 @@ from hlip.zeroshot_metadata_cq500 import HEADERS, CLASSNAMES, TEMPLATES
 # arguments
 def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)
-    parser.add_argument('--model', default='clip_vit_base_scan_study_token1176', type=str)
-    parser.add_argument('--resume', default='/pretrained/clip_vit_base_scan_study_token1176.pt', type=str)
-    parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., Zch0414/hlip-2025-10-08')
+    parser.add_argument('--model', default='clip-vit_large-scan_study-dualdinotxt1568', type=str)
+    parser.add_argument('--resume', default='/pretrained/clip-vit_large-scan_study-dualdinotxt1568.pt', type=str)
+    parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., zch0414/clip-vit_large-scan_study-dualdinotxt1568')
     
     parser.add_argument('--data-root', default='/path/to/cq500/')
     parser.add_argument('--input-file', default='../../data/cq500/cq500.csv')

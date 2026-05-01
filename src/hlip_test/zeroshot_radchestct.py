@@ -31,11 +31,11 @@ from hlip.zeroshot_metadata_radchestct import CLASSNAMES, TEMPLATES
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)
-    parser.add_argument('--model', default='clip_vit_base_slice_scan_token2744', type=str)
+    parser.add_argument('--model', default='clip_vit_base_slice_scan_dualdinotxt2744', type=str)
     parser.add_argument('--use-cxr-bert', default=False, action='store_true')
     parser.add_argument('--lora-text', default=False, action='store_true')
     parser.add_argument('--lock-text-freeze-layer-norm', default=False, action='store_true')
-    parser.add_argument('--resume', default='/pretrained/chestct_clip_vit_base_slice_scan_token2744.pt', type=str)
+    parser.add_argument('--resume', default='/pretrained/clip_vit_base_slice_scan_dualdinotxt2744.pt', type=str)
 
     parser.add_argument('--data-root', default='/path/to/rad_chestct/')
     parser.add_argument('--input-file', default='../../data/rad_chestct/rad_chestct_labels.csv', type=str)

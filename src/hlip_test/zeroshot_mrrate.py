@@ -32,9 +32,9 @@ from hlip.zeroshot_metadata_mrrate import CLASSNAMES, TEMPLATES
 # arguments
 def get_args_parser():
     parser = argparse.ArgumentParser('Perform Zero-shot', add_help=False)
-    parser.add_argument('--model', default='model_name', type=str)
-    parser.add_argument('--resume', default='/path/to/model.pt', type=str)
-    parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., Zch0414/hlip-2025-10-08')
+    parser.add_argument('--model', default='clip-vit_large-scan_study-dualdinotxt1568', type=str)
+    parser.add_argument('--resume', default='/pretrained/clip-vit_large-scan_study-dualdinotxt1568.pt', type=str)
+    parser.add_argument('--huggingface', default=None, type=str, help='HF model repo id, e.g., zch0414/clip-vit_large-scan_study-dualdinotxt1568')
     
     parser.add_argument('--data-root', default='/path/to/mr_rate')
     parser.add_argument('--input-file', default='../../data/mr_rate/mr_rate_test.csv')

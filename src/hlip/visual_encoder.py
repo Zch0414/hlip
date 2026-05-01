@@ -296,32 +296,6 @@ def custom_create_vision_transformer(variant, **kwargs):
     )
 
 
-# original HLIP for CT-RATE and Rad-ChestCT
-@register_model
-def vit_base_slice_scan_token2744(pretrained=True, **kwargs):
-    model_args = dict(
-        max_num_scans=1, slice_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), scan_attn_indexes=(2, 5, 8, 11),
-        img_size=(112, 336, 336), patch_size=(8, 24, 24),
-        in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
-        embed_layer=PatchEmbed3D, 
-    )
-    model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
-    return model
-
-
-# original HLIP for Pub-Brain-5 and RSNA
-@register_model
-def vit_base_scan_study_token1176(pretrained=True, **kwargs):
-    model_args = dict(
-        max_num_scans=40, scan_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), study_attn_indexes=(2, 5, 8, 11),
-        img_size=(48, 224, 224), patch_size=(8, 16, 16),
-        in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
-        embed_layer=PatchEmbed3D, 
-    )
-    model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
-    return model
-
-
 @register_model
 def vit_base_slice_scan_dualdinotxt2744(pretrained=True, **kwargs):
     model_args = dict(
@@ -340,8 +314,8 @@ def vit_base_slice_scan_dualdinotxt2744(pretrained=True, **kwargs):
 @register_model
 def vit_base_scan_study_dualdinotxt1568(pretrained=True, **kwargs):
     model_args = dict(
-        max_num_scans=0, 
-        scan_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10), 
+        max_num_scans=0,
+        scan_attn_indexes=(0, 1, 3, 4, 6, 7, 9, 10),
         study_attn_indexes=(2, 5, 8, 11),
         global_pool_dinotxt=True, reg_tokens=1,
         img_size=(48, 224, 224), patch_size=(6, 16, 16),
@@ -349,4 +323,51 @@ def vit_base_scan_study_dualdinotxt1568(pretrained=True, **kwargs):
         embed_layer=PatchEmbed3D, 
     )
     model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def vit_base_slice_scan_study_dualdinotxt1568(pretrained=True, **kwargs):
+    model_args = dict(
+        max_num_scans=0, 
+        slice_attn_indexes=(0, 3, 6, 9),
+        scan_attn_indexes=(1, 4, 7, 10), 
+        study_attn_indexes=(2, 5, 8, 11),
+        global_pool_dinotxt=True, reg_tokens=1,
+        img_size=(48, 224, 224), patch_size=(6, 16, 16),
+        in_chans=1, depth = 12, embed_dim=768, num_heads=12, num_classes=0, no_embed_class=True, pos_embed='none',
+        embed_layer=PatchEmbed3D, 
+    )
+    model = custom_create_vision_transformer('vit_base_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def vit_large_scan_study_dualdinotxt1568(pretrained=True, **kwargs):
+    model_args = dict(
+        max_num_scans=0,
+        scan_attn_indexes=(0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 18, 19, 20, 21, 22),
+        study_attn_indexes=(5, 11, 17, 23),
+        global_pool_dinotxt=True, reg_tokens=1,
+        img_size=(48, 224, 224), patch_size=(6, 16, 16),
+        in_chans=1, depth = 24, embed_dim=1024, num_heads=16, num_classes=0, no_embed_class=True, pos_embed='none',
+        embed_layer=PatchEmbed3D,
+    )
+    model = custom_create_vision_transformer('vit_large_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
+    return model
+
+
+@register_model
+def vit_large_slice_scan_study_dualdinotxt1568(pretrained=True, **kwargs):
+    model_args = dict(
+        max_num_scans=0, 
+        slice_attn_indexes=(0, 1, 2, 3, 6, 7, 8, 9, 12, 13, 14, 15, 18, 19, 20, 21),
+        scan_attn_indexes=(4, 10, 16, 22), 
+        study_attn_indexes=(5, 11, 17, 23),
+        global_pool_dinotxt=True, reg_tokens=1,
+        img_size=(48, 224, 224), patch_size=(6, 16, 16),
+        in_chans=1, depth = 24, embed_dim=1024, num_heads=16, num_classes=0, no_embed_class=True, pos_embed='none',
+        embed_layer=PatchEmbed3D,
+    )
+    model = custom_create_vision_transformer('vit_large_patch16_224.mae', pretrained=pretrained, **dict(model_args, **kwargs))
     return model
