@@ -1,9 +1,9 @@
 # headers in the CSV file
-HEADERS = ("Any", "Intraparenchymal", "Intraventricular", "Subarachnoid", "Subdural")
+HEADERS = ("Any", "Epidural", "Intraparenchymal", "Intraventricular", "Subarachnoid", "Subdural")
 
 
 # classnames in the prompt
-CLASSNAMES = ("intracranial hemorrhage", "intraparenchymal hemorrhage", "intraventricular hemorrhage", "subarachnoid hemorrhage", "subdural hemorrhage")
+CLASSNAMES = ("intracranial hemorrhage", "epidural hemorrhage", "intraparenchymal hemorrhage", "intraventricular hemorrhage", "subarachnoid hemorrhage", "subdural hemorrhage")
 
 
 # prompt templates

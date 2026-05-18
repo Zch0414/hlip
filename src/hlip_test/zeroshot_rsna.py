@@ -114,7 +114,7 @@ def compute_rsna_metrics(ground_truth, prediction):
     assert prediction.shape == ground_truth.shape and prediction.shape[1] == len(HEADERS), f"Expected [N, {len(HEADERS)}] inputs."
 
     results = {}
-    for i, name in enumerate(["Intracranial hemorrhage", "Intraparenchymal hemorrhage", "Intraventricular hemorrhage", "Subarachnoid hemorrhage", "Subdural hemorrhage"]):
+    for i, name in enumerate(CLASSNAMES):
         y_true, y_score = ground_truth[:, i], prediction[:, i]
         results[f"auc ({name})"] = float(
             roc_auc_score(y_true, y_score)
