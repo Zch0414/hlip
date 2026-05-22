@@ -81,7 +81,7 @@ class RSNADataset(Dataset):
         study, target = self.studies[idx]
 
         image = []
-        for scan in [os.path.join(self.data_root, study, p) for p in os.listdir(os.path.join(self.data_root, study))]:
+        for scan in [os.path.join(self.data_root, study, p, 'img.pt') for p in os.listdir(os.path.join(self.data_root, study))]:
             # load in img
             img = torch.load(scan, weights_only=True)                
             img = img.float() / 255.0
