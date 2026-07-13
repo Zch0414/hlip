@@ -2,7 +2,7 @@
 > Official PyTorch implementation of the following paper:\
 > Towards Scalable Language-Image Pre-training for 3D Medical Imaging\
 > University of Michigan\
-> [![TMLR](https://img.shields.io/badge/TMLR-accepted-success.svg)](https://openreview.net/forum?id=WxHf4EcBWA)&nbsp; [![arXiv](https://img.shields.io/badge/arXiv%20paper-2505.21862-b31b1b.svg)](https://arxiv.org/abs/2505.21862)&nbsp; [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/collections/zch0414/hlip)&nbsp;
+> [![TMLR](https://img.shields.io/badge/TMLR-accepted-success.svg)](https://openreview.net/forum?id=WxHf4EcBWA)&nbsp; [![Ablation Blog](https://img.shields.io/badge/Ablation%20Blog-read-blue.svg)](https://zch0414.github.io/hlip-ablation/)&nbsp; [![huggingface weights](https://img.shields.io/badge/%F0%9F%A4%97%20Weights-yellow)](https://huggingface.co/collections/zch0414/hlip)&nbsp;
 
 
 
